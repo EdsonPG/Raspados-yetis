@@ -1,0 +1,259 @@
+---
+/**
+ * Pagina: Productos / Recetas
+ *
+ * Vista para crear productos y armar recetas con insumos.
+ * Consume: GET /api/v1/insumos
+ * Envia:   POST /api/v1/productos
+ */
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout titulo="Productos / Recetas" descripcion="Creador de productos y recetas - Raspados Yeti ERP">
+
+  <!-- Cabecera de la vista -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h3 class="text-2xl font-bold text-texto-900">Productos y Recetas</h3>
+      <p class="text-texto-500 mt-1">Crea nuevos productos y define sus insumos paso a paso</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+    <!-- Columna izquierda: Formulario -->
+    <div class="lg:col-span-3">
+      <div class="bg-white rounded-xl border border-superficie-200 shadow-card p-6">
+        <h4 class="text-sm font-semibold text-texto-900 uppercase tracking-wide mb-4">Nuevo Producto</h4>
+
+        <form id="form-producto" class="space-y-5">
+          <!-- Nombre del producto -->
+          <div>
+            <label for="input-nombre-producto" class="block text-sm font-medium text-texto-700 mb-1.5">Nombre del producto</label>
+            <input type="text" id="input-nombre-producto" name="nombre" required
+                   placeholder="Ej. Trole de 16oz"
+                   class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                          focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400
+                          placeholder:text-texto-400" />
+          </div>
+
+          <!-- Receta dinamica -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <label class="block text-sm font-medium text-texto-700">Receta del producto</label>
+              <button type="button" id="btn-agregar-insumo"
+                      class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium bg-yeti-600 text-white rounded-lg
+                             hover:bg-yeti-700 focus:outline-none focus:ring-2 focus:ring-yeti-500/40">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Anadir Insumo
+              </button>
+            </div>
+
+            <div id="receta-vacia" class="text-sm text-texto-400 bg-superficie-50 border border-superficie-200 rounded-lg p-4">
+              Aun no hay insumos en la receta. Agrega al menos uno para continuar.
+            </div>
+
+            <div id="lista-receta" class="space-y-3 hidden"></div>
+          </div>
+
+          <!-- Mensaje de error / exito -->
+          <div id="mensaje-form" class="hidden rounded-lg px-4 py-3 text-sm"></div>
+
+          <!-- Boton guardar -->
+          <div class="flex justify-end">
+            <button type="submit" id="btn-guardar-producto"
+                    class="px-5 py-2.5 text-sm font-medium text-white bg-yeti-600 rounded-lg
+                           hover:bg-yeti-700 active:bg-yeti-800 shadow-sm hover:shadow-md
+                           focus:outline-none focus:ring-2 focus:ring-yeti-500 focus:ring-offset-2
+                           disabled:opacity-50 disabled:cursor-not-allowed">
+              Guardar Producto
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Columna derecha: Guia rapida -->
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-xl border border-superficie-200 shadow-card p-6">
+        <h4 class="text-sm font-semibold text-texto-900 uppercase tracking-wide mb-4">Guia Rapida</h4>
+        <ul class="text-sm text-texto-600 space-y-2">
+          <li>1) Escribe el nombre del nuevo producto.</li>
+          <li>2) Agrega los insumos que lleva la receta.</li>
+          <li>3) Define la cantidad fraccionada de cada insumo.</li>
+          <li>4) Guarda para crear el producto y su receta.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</Layout>
+
+<script>
+  const API_BASE = 'http://127.0.0.1:8001/api/v1';
+  let insumosDisponibles = [];
+  let contadorFilas = 0;
+
+  async function cargarInsumos() {
+    try {
+      const res = await fetch(`${API_BASE}/insumos?per_page=200`);
+      const json = await res.json();
+      if (json.exito) {
+        insumosDisponibles = json.datos.data || [];
+      }
+    } catch {
+      insumosDisponibles = [];
+    }
+  }
+
+  function construirOpcionesInsumos() {
+    if (insumosDisponibles.length === 0) {
+      return '<option value="" disabled selected>No hay insumos</option>';
+    }
+    const opciones = insumosDisponibles.map(insumo => `
+      <option value="${insumo.id}">${insumo.nombre} (${insumo.unidad_medida})</option>
+    `).join('');
+    return `<option value="" disabled selected>Seleccionar insumo</option>${opciones}`;
+  }
+
+  function agregarFilaReceta() {
+    const lista = document.getElementById('lista-receta');
+    const vacia = document.getElementById('receta-vacia');
+    if (!lista || !vacia) return;
+
+    const opciones = construirOpcionesInsumos();
+    const idFila = `fila-${contadorFilas++}`;
+
+    const fila = document.createElement('div');
+    fila.className = 'flex items-center gap-3 p-3 border border-superficie-200 rounded-lg bg-superficie-50/60';
+    fila.setAttribute('data-fila-id', idFila);
+    fila.innerHTML = `
+      <div class="flex-1">
+        <label class="block text-xs font-medium text-texto-500 mb-1">Insumo</label>
+        <select class="select-insumo w-full px-3 py-2 text-sm border border-superficie-200 rounded-lg bg-white
+                       focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400">
+          ${opciones}
+        </select>
+      </div>
+      <div class="w-40">
+        <label class="block text-xs font-medium text-texto-500 mb-1">Cantidad</label>
+        <input type="number" class="input-cantidad w-full px-3 py-2 text-sm border border-superficie-200 rounded-lg bg-white
+                       focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400"
+               step="0.0001" min="0.0001" placeholder="0.0000" />
+      </div>
+      <button type="button" class="btn-quitar w-9 h-9 rounded-lg flex items-center justify-center bg-red-50 text-red-600
+                     hover:bg-red-100 border border-red-200">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    `;
+
+    lista.appendChild(fila);
+    vacia.classList.add('hidden');
+    lista.classList.remove('hidden');
+  }
+
+  function eliminarFilaReceta(target) {
+    const fila = target.closest('[data-fila-id]');
+    if (!fila) return;
+    fila.remove();
+
+    const lista = document.getElementById('lista-receta');
+    const vacia = document.getElementById('receta-vacia');
+    if (lista && lista.children.length === 0 && vacia) {
+      vacia.classList.remove('hidden');
+      lista.classList.add('hidden');
+    }
+  }
+
+  function obtenerReceta() {
+    const filas = document.querySelectorAll('#lista-receta [data-fila-id]');
+    const recetaMap = new Map();
+
+    filas.forEach(fila => {
+      const select = fila.querySelector('.select-insumo');
+      const input = fila.querySelector('.input-cantidad');
+      const insumoId = parseInt(select?.value || '0', 10);
+      const cantidad = parseFloat(input?.value || '0');
+
+      if (insumoId > 0 && cantidad > 0) {
+        const acumulado = recetaMap.get(insumoId) || 0;
+        recetaMap.set(insumoId, acumulado + cantidad);
+      }
+    });
+
+    return Array.from(recetaMap.entries()).map(([insumo_id, cantidad]) => ({ insumo_id, cantidad }));
+  }
+
+  function mostrarMensaje(tipo, texto) {
+    const el = document.getElementById('mensaje-form');
+    if (!el) return;
+    el.textContent = texto;
+    el.classList.remove('hidden', 'bg-red-50', 'border-red-200', 'text-red-700', 'bg-ganancia-50', 'border-ganancia-200', 'text-ganancia-700');
+    if (tipo === 'error') {
+      el.classList.add('bg-red-50', 'border', 'border-red-200', 'text-red-700');
+    } else {
+      el.classList.add('bg-ganancia-50', 'border', 'border-ganancia-200', 'text-ganancia-700');
+    }
+  }
+
+  async function guardarProducto(event) {
+    event.preventDefault();
+    const btnGuardar = document.getElementById('btn-guardar-producto');
+    const nombre = document.getElementById('input-nombre-producto')?.value?.trim();
+    const receta = obtenerReceta();
+
+    if (!nombre) {
+      mostrarMensaje('error', 'Escribe el nombre del producto.');
+      return;
+    }
+
+    if (receta.length === 0) {
+      mostrarMensaje('error', 'Agrega al menos un insumo con cantidad valida.');
+      return;
+    }
+
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = 'Guardando...';
+
+    try {
+      const res = await fetch(`${API_BASE}/productos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ nombre, receta }),
+      });
+      const json = await res.json();
+
+      if (res.ok && json.exito) {
+        mostrarMensaje('exito', 'Producto creado correctamente.');
+        (document.getElementById('form-producto') as HTMLFormElement).reset();
+        document.getElementById('lista-receta').innerHTML = '';
+        document.getElementById('lista-receta').classList.add('hidden');
+        document.getElementById('receta-vacia').classList.remove('hidden');
+      } else {
+        const mensajes = json.errors
+          ? Object.values(json.errors).flat().join('. ')
+          : json.mensaje || 'No se pudo crear el producto.';
+        mostrarMensaje('error', mensajes);
+      }
+    } catch {
+      mostrarMensaje('error', 'No se pudo conectar con la API.');
+    } finally {
+      btnGuardar.disabled = false;
+      btnGuardar.textContent = 'Guardar Producto';
+    }
+  }
+
+  document.getElementById('btn-agregar-insumo')?.addEventListener('click', () => agregarFilaReceta());
+  document.getElementById('lista-receta')?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('.btn-quitar')) {
+      eliminarFilaReceta(e.target as HTMLElement);
+    }
+  });
+  document.getElementById('form-producto')?.addEventListener('submit', guardarProducto);
+
+  cargarInsumos();
+</script>

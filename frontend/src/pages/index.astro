@@ -1,0 +1,120 @@
+---
+/**
+ * Página: Dashboard
+ *
+ * Vista principal del ERP con resumen general del negocio.
+ * Muestra tarjetas de métricas principales y accesos rápidos.
+ */
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout titulo="Dashboard" descripcion="Panel principal del ERP Raspados Yeti">
+
+  <!-- Tarjetas de bienvenida -->
+  <div class="mb-8">
+    <h3 class="text-2xl font-bold text-texto-900">Bienvenido al Sistema</h3>
+    <p class="text-texto-500 mt-1">Panel de control de Raspados Yeti — Motor de Costeo</p>
+  </div>
+
+  <!-- KPIs rápidos -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+    <!-- Tarjeta: Total Insumos -->
+    <div class="bg-white rounded-xl border border-superficie-200 p-6 shadow-card hover:shadow-card-hover group cursor-pointer"
+         onclick="window.location.href='/insumos'">
+      <div class="flex items-center justify-between mb-4">
+        <div class="w-10 h-10 rounded-lg bg-yeti-50 flex items-center justify-center group-hover:bg-yeti-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yeti-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125v-3.75" />
+          </svg>
+        </div>
+        <span class="text-xs font-medium text-yeti-500 bg-yeti-50 px-2 py-1 rounded-full">Materia Prima</span>
+      </div>
+      <p id="kpi-insumos" class="text-3xl font-bold text-texto-900">—</p>
+      <p class="text-sm text-texto-500 mt-1">Insumos registrados</p>
+    </div>
+
+    <!-- Tarjeta: Total Productos -->
+    <div class="bg-white rounded-xl border border-superficie-200 p-6 shadow-card hover:shadow-card-hover group cursor-pointer"
+         onclick="window.location.href='/cotizador'">
+      <div class="flex items-center justify-between mb-4">
+        <div class="w-10 h-10 rounded-lg bg-frost-400/10 flex items-center justify-center group-hover:bg-frost-400/20">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-frost-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+          </svg>
+        </div>
+        <span class="text-xs font-medium text-frost-600 bg-frost-400/10 px-2 py-1 rounded-full">Snacks</span>
+      </div>
+      <p id="kpi-productos" class="text-3xl font-bold text-texto-900">—</p>
+      <p class="text-sm text-texto-500 mt-1">Productos con receta</p>
+    </div>
+
+    <!-- Tarjeta: Cotizador -->
+    <div class="bg-gradient-to-br from-yeti-600 to-yeti-700 rounded-xl p-6 shadow-card hover:shadow-card-hover group cursor-pointer text-white"
+         onclick="window.location.href='/cotizador'">
+      <div class="flex items-center justify-between mb-4">
+        <div class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center group-hover:bg-white/30">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0012 2.25z" />
+          </svg>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white/60 group-hover:text-white group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+        </svg>
+      </div>
+      <p class="text-3xl font-bold">Cotizador</p>
+      <p class="text-sm text-yeti-200 mt-1">Calcular costos de producción →</p>
+    </div>
+  </div>
+
+  <!-- Acciones rápidas -->
+  <div class="bg-white rounded-xl border border-superficie-200 p-6 shadow-card">
+    <h4 class="text-sm font-semibold text-texto-900 uppercase tracking-wide mb-4">Accesos Rápidos</h4>
+    <div class="grid grid-cols-2 gap-3">
+      <a href="/insumos" class="flex items-center gap-3 p-4 rounded-lg border border-superficie-200 hover:border-yeti-300 hover:bg-yeti-50 group">
+        <div class="w-8 h-8 rounded bg-yeti-50 flex items-center justify-center group-hover:bg-yeti-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yeti-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </div>
+        <span class="text-sm font-medium text-texto-700 group-hover:text-yeti-700">Gestionar Insumos</span>
+      </a>
+      <a href="/cotizador" class="flex items-center gap-3 p-4 rounded-lg border border-superficie-200 hover:border-frost-400 hover:bg-frost-400/5 group">
+        <div class="w-8 h-8 rounded bg-frost-400/10 flex items-center justify-center group-hover:bg-frost-400/20">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-frost-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+          </svg>
+        </div>
+        <span class="text-sm font-medium text-texto-700 group-hover:text-frost-600">Cotizar Producto</span>
+      </a>
+    </div>
+  </div>
+
+</Layout>
+
+<script>
+  // Cargar KPIs del dashboard
+  async function cargarKPIs() {
+    try {
+      const [insumosRes, productosRes] = await Promise.all([
+        fetch('http://127.0.0.1:8001/api/v1/insumos'),
+        fetch('http://127.0.0.1:8001/api/v1/productos'),
+      ]);
+
+      if (insumosRes.ok) {
+        const data = await insumosRes.json();
+        const el = document.getElementById('kpi-insumos');
+        if (el) el.textContent = data.datos.total.toString();
+      }
+      if (productosRes.ok) {
+        const data = await productosRes.json();
+        const el = document.getElementById('kpi-productos');
+        if (el) el.textContent = data.datos.total.toString();
+      }
+    } catch {
+      // API no disponible — los KPIs se quedan con "—"
+    }
+  }
+  cargarKPIs();
+</script>

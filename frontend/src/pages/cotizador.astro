@@ -1,0 +1,621 @@
+---
+/**
+ * Pagina: Cotizador (Motor de Costeo)
+ *
+ * Vista interactiva para seleccionar un producto y visualizar
+ * el desglose completo de costos de produccion.
+ *
+ * Consume:
+ *   - GET /api/v1/productos -> Lista de productos
+ *   - GET /api/v1/productos/{id}/costo-base -> Desglose de costos
+ */
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout titulo="Cotizador" descripcion="Motor de Costeo - Calcula el costo de produccion de tus snacks">
+
+  <!-- Cabecera -->
+  <div class="mb-8">
+    <h3 class="text-2xl font-bold text-texto-900">Motor de Costeo</h3>
+    <p class="text-texto-500 mt-1">Agrega productos a la lista y guarda la cotizacion del evento</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+    <!-- COLUMNA IZQUIERDA: Selector de producto -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- Selector de producto -->
+      <div class="bg-white rounded-xl border border-superficie-200 shadow-card p-6">
+        <label class="block text-sm font-semibold text-texto-900 mb-3">Agregar Productos</label>
+
+        <!-- Estado de carga del selector -->
+        <div id="selector-carga" class="flex items-center gap-3 py-3">
+          <div class="w-5 h-5 border-2 border-yeti-300 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-sm text-texto-400">Cargando productos...</span>
+        </div>
+
+        <!-- Lista de productos como tarjetas seleccionables -->
+        <div id="lista-productos" class="space-y-2 hidden"></div>
+
+        <!-- Estado vacío -->
+        <div id="productos-vacio" class="hidden text-center py-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-superficie-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+          </svg>
+          <p class="text-sm text-texto-500">No hay productos registrados</p>
+          <p class="text-xs text-texto-400 mt-1">Crea productos con recetas desde la vista de productos</p>
+        </div>
+
+        <!-- Error de conexión -->
+        <div id="productos-error" class="hidden text-center py-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-red-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <p class="text-sm text-red-500">No se pudo conectar con la API</p>
+          <p class="text-xs text-texto-400 mt-1">Ejecuta: <code class="bg-superficie-100 px-1 rounded">php artisan serve --port=8001</code></p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-superficie-200 shadow-card p-6">
+        <h4 class="text-sm font-semibold text-texto-900 uppercase tracking-wide mb-4">Indicaciones</h4>
+        <p class="text-sm text-texto-500">Agrega productos y ajusta cantidades. Cuando estes listo, continua al modal para capturar los datos del evento.</p>
+      </div>
+    </div>
+
+    <!-- COLUMNA DERECHA: Panel de costeo -->
+    <div class="lg:col-span-3">
+
+      <!-- Estado inicial: instrucciones -->
+      <div id="panel-vacio"
+           class="bg-white rounded-xl border-2 border-dashed border-superficie-300 p-12 text-center">
+        <div class="w-16 h-16 rounded-2xl bg-yeti-50 flex items-center justify-center mx-auto mb-5">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-yeti-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0012 2.25z" />
+          </svg>
+        </div>
+        <h4 class="text-lg font-semibold text-texto-700 mb-2">Lista de compra vacia</h4>
+        <p class="text-sm text-texto-400 max-w-sm mx-auto">
+          Agrega productos desde el panel izquierdo para construir la cotizacion
+        </p>
+      </div>
+
+      <!-- PANEL DE RESULTADOS: Cotización de Evento -->
+      <div id="panel-resultado" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl border border-superficie-200 shadow-panel overflow-hidden">
+          <div class="bg-gradient-to-r from-yeti-600 to-yeti-700 px-8 py-6 text-white">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs uppercase tracking-widest text-yeti-200 mb-1">Cotización de Evento</p>
+                <h3 id="resultado-cliente" class="text-2xl font-bold">Cliente</h3>
+              </div>
+              <div class="text-right">
+                <p id="resultado-invitados-badge" class="text-sm font-medium text-yeti-200">0 invitados</p>
+              </div>
+            </div>
+          </div>
+          <div class="px-8 py-6">
+            <p class="text-[11px] font-semibold uppercase tracking-widest text-texto-400 mb-3">Lista de Productos</p>
+            <div id="lista-carrito" class="space-y-2"></div>
+            <div class="my-5 border-t-2 border-dashed border-superficie-200"></div>
+            <p class="text-[11px] font-semibold uppercase tracking-widest text-texto-400 mb-3">Costos del Evento</p>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between py-2">
+                <div class="flex items-center gap-2"><span>🧊</span><span class="text-sm text-texto-700">Costo de Snacks</span><span id="lbl-invitados" class="text-[10px] text-texto-400 ml-1">(×50)</span></div>
+                <span id="resultado-snacks" class="text-sm font-semibold text-texto-900">$0.00</span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-t border-superficie-100">
+                <div class="flex items-center gap-2"><span>🚗</span><span class="text-sm text-texto-700">Logística y Transporte</span><span id="lbl-distancia" class="text-[10px] text-texto-400 ml-1">(0 km)</span></div>
+                <span id="resultado-transporte" class="text-sm font-semibold text-texto-900">$0.00</span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-t border-superficie-100">
+                <div class="flex items-center gap-2"><span>🧑‍🍳</span><span class="text-sm text-texto-700">Nómina Operativa</span><span id="lbl-empleados" class="text-[10px] text-texto-400 ml-1">(0 emp.)</span></div>
+                <span id="resultado-nomina" class="text-sm font-semibold text-texto-900">$0.00</span>
+              </div>
+            </div>
+            <div class="my-5 border-t-2 border-dashed border-superficie-200"></div>
+                 <p class="text-[11px] font-semibold uppercase tracking-widest text-texto-400 mb-3">Control Financiero</p>
+                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label for="input-margen" class="block text-[11px] font-semibold text-texto-500 mb-1">Margen %</label>
+                <input type="number" id="input-margen" value="40" min="0" max="100" step="1"
+                  class="w-full px-2.5 py-2 text-sm border border-superficie-200 rounded-lg bg-white
+                    focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400" />
+              </div>
+              <div>
+                <label for="input-tarifa-empleado" class="block text-[11px] font-semibold text-texto-500 mb-1">Pago por Empleado</label>
+                <input type="number" id="input-tarifa-empleado" value="300" min="0" step="1"
+                  class="w-full px-2.5 py-2 text-sm border border-superficie-200 rounded-lg bg-white
+                    focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400" />
+              </div>
+              <div>
+                <label for="input-tarifa-km" class="block text-[11px] font-semibold text-texto-500 mb-1">Costo por KM</label>
+                <input type="number" id="input-tarifa-km" value="4" min="0" step="0.5"
+                  class="w-full px-2.5 py-2 text-sm border border-superficie-200 rounded-lg bg-white
+                    focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400" />
+              </div>
+                 </div>
+                 <div class="my-5 border-t-2 border-dashed border-superficie-200"></div>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-costo-500"></div><span class="text-sm font-medium text-texto-700">Total Operativo</span></div>
+                <span id="resultado-total-operativo" class="text-lg font-bold text-costo-600">$0.00</span>
+              </div>
+              <div class="my-2 border-t border-superficie-200"></div>
+              <div class="flex items-center justify-between bg-ganancia-50 -mx-4 px-4 py-3 rounded-xl border border-ganancia-200">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full bg-ganancia-100 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-ganancia-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
+                  </div>
+                  <span class="text-sm font-semibold text-ganancia-700">Margen</span>
+                </div>
+                <span id="resultado-margen" class="text-xl font-extrabold text-ganancia-700">$0.00</span>
+              </div>
+              <div class="flex items-center justify-between bg-yeti-50 -mx-4 px-4 py-4 rounded-xl border border-yeti-200 mt-2">
+                <span class="text-base font-bold text-yeti-800">💰 Precio Final del Evento</span>
+                <span id="resultado-precio-final" class="text-2xl font-extrabold text-yeti-700">$0.00</span>
+              </div>
+              <button id="btn-abrir-modal"
+                      class="w-full mt-4 bg-yeti-600 text-white text-sm font-semibold py-2.5 rounded-lg shadow-sm
+                             hover:bg-yeti-700 transition disabled:opacity-60 disabled:cursor-not-allowed">
+                Siguiente: Datos del Evento
+              </button>
+              <div id="mensaje-cotizacion" class="hidden mt-3 rounded-lg px-4 py-3 text-sm"></div>
+            </div>
+          </div>
+          <div class="px-8 py-4 bg-superficie-50 border-t border-superficie-200">
+            <div class="flex items-center justify-between text-[11px] text-texto-400">
+              <span>Cotización generada en tiempo real</span>
+              <span id="resultado-fecha">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</Layout>
+
+<!-- MODAL: Datos del Evento -->
+<div id="modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/30 backdrop-blur-sm">
+  <div id="modal-contenido" class="bg-white rounded-2xl shadow-panel w-full max-w-xl mx-4 transform scale-95 opacity-0"
+       style="transition: transform 200ms ease-out, opacity 200ms ease-out;">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-superficie-200">
+      <h4 class="text-lg font-semibold text-texto-900">Datos del Evento</h4>
+      <button id="btn-cerrar-modal"
+              class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-superficie-100 text-texto-400 hover:text-texto-700">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div>
+        <label for="input-cliente" class="block text-sm font-medium text-texto-700 mb-1.5">Nombre del Cliente</label>
+        <input type="text" id="input-cliente" placeholder="Ej. Ana Rodriguez"
+               class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                      focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400" />
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="input-fecha" class="block text-sm font-medium text-texto-700 mb-1.5">Fecha</label>
+          <input type="date" id="input-fecha"
+                 class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                        focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400" />
+        </div>
+        <div>
+          <label for="input-hora" class="block text-sm font-medium text-texto-700 mb-1.5">Hora</label>
+          <input type="time" id="input-hora"
+                 class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                        focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400" />
+        </div>
+      </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+         <div>
+           <label for="input-municipio" class="block text-sm font-medium text-texto-700 mb-1.5">Municipio</label>
+           <input type="text" id="input-municipio" placeholder="Ej. Tampico"
+             class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+               focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400" />
+         </div>
+         <div>
+           <label for="input-colonia" class="block text-sm font-medium text-texto-700 mb-1.5">Colonia</label>
+           <input type="text" id="input-colonia" placeholder="Ej. Centro"
+             class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+               focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400" />
+         </div>
+            </div>
+            <div>
+         <label for="input-calle" class="block text-sm font-medium text-texto-700 mb-1.5">Calle y Numero</label>
+         <input type="text" id="input-calle" placeholder="Ej. Av. Glaciar 120"
+           class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+             focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400" />
+            </div>
+            <div>
+         <label for="input-descripcion" class="block text-sm font-medium text-texto-700 mb-1.5">Descripcion del Lugar</label>
+         <textarea id="input-descripcion" rows="3" placeholder="Ej. Salon Aurora, fachada blanca, referencias..."
+              class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400"></textarea>
+            </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="input-distancia" class="block text-sm font-medium text-texto-700 mb-1.5">Distancia (KM)</label>
+          <input type="number" id="input-distancia" min="0" max="500" step="0.5" value="10"
+                 class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                        focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400" />
+        </div>
+        <div>
+          <label for="input-empleados" class="block text-sm font-medium text-texto-700 mb-1.5">Empleados requeridos</label>
+          <input type="number" id="input-empleados" min="1" max="50" value="2"
+                 class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                        focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400" />
+        </div>
+      </div>
+      <div id="mensaje-modal" class="hidden rounded-lg px-4 py-3 text-sm"></div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" id="btn-cancelar-modal"
+                class="px-4 py-2.5 text-sm font-medium text-texto-700 bg-superficie-100 rounded-lg hover:bg-superficie-200">
+          Cancelar
+        </button>
+        <button type="button" id="btn-guardar-cotizacion"
+                class="px-5 py-2.5 text-sm font-medium text-white bg-yeti-600 rounded-lg hover:bg-yeti-700">
+          💾 Guardar y Crear Cotizacion
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = 'http://127.0.0.1:8001/api/v1';
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let productosDisponibles: any[] = [];
+  let carrito: Array<{ producto_id: number; nombre: string; cantidad: number }> = [];
+  const costoCache = new Map<number, number>();
+  let calculoEnCurso = 0;
+  let totalUnidades = 0;
+
+  async function cargarProductos() {
+    const cargaEl = document.getElementById('selector-carga');
+    const listaEl = document.getElementById('lista-productos');
+    const vacioEl = document.getElementById('productos-vacio');
+    const errorEl = document.getElementById('productos-error');
+    try {
+      const res = await fetch(`${API_BASE}/productos?per_page=100`);
+      const json = await res.json();
+      cargaEl?.classList.add('hidden');
+      if (json.exito && json.datos.data.length > 0) {
+        productosDisponibles = json.datos.data;
+        listaEl?.classList.remove('hidden');
+        renderizarProductos(productosDisponibles);
+      } else { vacioEl?.classList.remove('hidden'); }
+    } catch {
+      cargaEl?.classList.add('hidden');
+      errorEl?.classList.remove('hidden');
+    }
+  }
+
+  function renderizarProductos(productos: any[]) {
+    const listaEl = document.getElementById('lista-productos');
+    if (!listaEl) return;
+    listaEl.innerHTML = productos.map(p => `
+      <div class="w-full px-4 py-3 rounded-lg border border-superficie-200 hover:border-yeti-300 hover:bg-yeti-50/50 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-frost-400/20 to-yeti-100 flex items-center justify-center"><span class="text-sm">🧊</span></div>
+          <div>
+            <p class="text-sm font-medium text-texto-900">${p.nombre}</p>
+            <p class="text-[11px] text-texto-400">${p.insumos_count || 0} insumos en receta</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="text-right">
+            <p class="text-sm font-semibold text-yeti-600">$${parseFloat(p.precio_sugerido).toFixed(2)}</p>
+            <p class="text-[10px] text-texto-400">precio venta</p>
+          </div>
+          <button data-action="agregar" data-producto-id="${p.id}"
+                  class="px-3 py-2 text-xs font-semibold rounded-lg bg-yeti-600 text-white hover:bg-yeti-700">
+            Agregar
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function agregarProducto(id: number) {
+    const producto = productosDisponibles.find(p => p.id === id);
+    if (!producto) return;
+    const existente = carrito.find(item => item.producto_id === id);
+    if (existente) {
+      existente.cantidad += 1;
+    } else {
+      carrito.push({ producto_id: id, nombre: producto.nombre, cantidad: 1 });
+    }
+    renderizarCarrito();
+    actualizarTotales();
+  }
+
+  function renderizarCarrito() {
+    const lista = document.getElementById('lista-carrito');
+    if (!lista) return;
+
+    if (carrito.length === 0) {
+      lista.innerHTML = '<p class="text-sm text-texto-400">No hay productos agregados.</p>';
+      return;
+    }
+
+    lista.innerHTML = carrito.map(item => `
+      <div class="flex items-center justify-between border border-superficie-200 rounded-lg px-3 py-2">
+        <div>
+          <p class="text-sm font-medium text-texto-900">${item.nombre}</p>
+          <p class="text-[10px] text-texto-400">Subtotal: <span id="subtotal-${item.producto_id}">$0.00</span></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="number" min="1" step="1" value="${item.cantidad}"
+                 data-producto-id="${item.producto_id}" class="input-cantidad w-20 px-2 py-1 text-sm border border-superficie-200 rounded-lg" />
+          <button data-action="quitar" data-producto-id="${item.producto_id}"
+                  class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100">
+            ✕
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function obtenerCostoBase(productoId: number): Promise<number> {
+    if (costoCache.has(productoId)) return costoCache.get(productoId) as number;
+    const res = await fetch(`${API_BASE}/productos/${productoId}/costo-base`);
+    const json = await res.json();
+    if (json.exito) {
+      const costo = parseFloat(json.datos.costo_produccion_base || 0);
+      costoCache.set(productoId, costo);
+      return costo;
+    }
+    return 0;
+  }
+
+  function obtenerParametrosEvento() {
+    const distancia = parseFloat((document.getElementById('input-distancia') as HTMLInputElement)?.value) || 0;
+    const empleados = parseInt((document.getElementById('input-empleados') as HTMLInputElement)?.value) || 0;
+    return { distancia, empleados };
+  }
+
+  function obtenerParametrosFinancieros() {
+    const margen = parseFloat((document.getElementById('input-margen') as HTMLInputElement)?.value) || 0;
+    const tarifaEmpleado = parseFloat((document.getElementById('input-tarifa-empleado') as HTMLInputElement)?.value) || 0;
+    const tarifaKm = parseFloat((document.getElementById('input-tarifa-km') as HTMLInputElement)?.value) || 0;
+    return { margen, tarifaEmpleado, tarifaKm };
+  }
+
+  function setText(id: string, texto: string) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = texto;
+  }
+
+  async function actualizarTotales() {
+    const panelVacio = document.getElementById('panel-vacio');
+    const panelResultado = document.getElementById('panel-resultado');
+    if (carrito.length === 0) {
+      panelVacio?.classList.remove('hidden');
+      panelResultado?.classList.add('hidden');
+      return;
+    }
+    panelVacio?.classList.add('hidden');
+    panelResultado?.classList.remove('hidden');
+
+    const currentCalc = ++calculoEnCurso;
+    const { distancia, empleados } = obtenerParametrosEvento();
+    const { margen, tarifaEmpleado, tarifaKm } = obtenerParametrosFinancieros();
+    const cliente = (document.getElementById('input-cliente') as HTMLInputElement)?.value || 'Cliente';
+
+    setText('resultado-cliente', cliente);
+    setText('lbl-distancia', `(${distancia} km)`);
+    setText('lbl-empleados', `(${empleados} emp.)`);
+
+    let totalSnacks = 0;
+    totalUnidades = 0;
+
+    for (const item of carrito) {
+      const costoBase = await obtenerCostoBase(item.producto_id);
+      if (calculoEnCurso !== currentCalc) return;
+      const subtotal = costoBase * item.cantidad;
+      totalSnacks += subtotal;
+      totalUnidades += item.cantidad;
+      setText(`subtotal-${item.producto_id}`, `$${subtotal.toFixed(2)}`);
+    }
+
+    setText('resultado-invitados-badge', `${totalUnidades} invitados`);
+
+    const costoTransporte = tarifaKm * distancia;
+    const costoNomina = tarifaEmpleado * empleados;
+    const totalOperativo = totalSnacks + costoTransporte + costoNomina;
+    const montoMargen = totalOperativo * (margen / 100);
+    const totalFinal = totalOperativo + montoMargen;
+
+    setText('lbl-invitados', `(${totalUnidades} items)`);
+    setText('resultado-snacks', `$${totalSnacks.toFixed(2)}`);
+    setText('resultado-transporte', `$${costoTransporte.toFixed(2)}`);
+    setText('resultado-nomina', `$${costoNomina.toFixed(2)}`);
+    setText('resultado-total-operativo', `$${totalOperativo.toFixed(2)}`);
+    setText('resultado-margen', `$${montoMargen.toFixed(2)}`);
+    setText('resultado-precio-final', `$${totalFinal.toFixed(2)}`);
+    setText('resultado-fecha', new Date().toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }));
+  }
+
+  function mostrarMensaje(tipo: 'exito' | 'error', texto: string, destino = 'mensaje-cotizacion') {
+    const el = document.getElementById(destino);
+    if (!el) return;
+    el.textContent = texto;
+    el.classList.remove('hidden', 'bg-red-50', 'border-red-200', 'text-red-700', 'bg-ganancia-50', 'border-ganancia-200', 'text-ganancia-700');
+    if (tipo === 'error') {
+      el.classList.add('bg-red-50', 'border', 'border-red-200', 'text-red-700');
+    } else {
+      el.classList.add('bg-ganancia-50', 'border', 'border-ganancia-200', 'text-ganancia-700');
+    }
+  }
+
+  function limpiarFormulario() {
+    (document.getElementById('input-cliente') as HTMLInputElement).value = '';
+    (document.getElementById('input-fecha') as HTMLInputElement).value = '';
+    (document.getElementById('input-hora') as HTMLInputElement).value = '';
+    (document.getElementById('input-municipio') as HTMLInputElement).value = '';
+    (document.getElementById('input-colonia') as HTMLInputElement).value = '';
+    (document.getElementById('input-calle') as HTMLInputElement).value = '';
+    (document.getElementById('input-descripcion') as HTMLTextAreaElement).value = '';
+    (document.getElementById('input-distancia') as HTMLInputElement).value = '10';
+    (document.getElementById('input-empleados') as HTMLInputElement).value = '2';
+    (document.getElementById('input-margen') as HTMLInputElement).value = '40';
+    (document.getElementById('input-tarifa-empleado') as HTMLInputElement).value = '300';
+    (document.getElementById('input-tarifa-km') as HTMLInputElement).value = '4';
+    carrito = [];
+    renderizarCarrito();
+    actualizarTotales();
+  }
+
+  async function guardarCotizacion() {
+    const cliente = (document.getElementById('input-cliente') as HTMLInputElement).value.trim();
+    const fecha = (document.getElementById('input-fecha') as HTMLInputElement).value;
+    const hora = (document.getElementById('input-hora') as HTMLInputElement).value;
+    const municipio = (document.getElementById('input-municipio') as HTMLInputElement).value.trim();
+    const colonia = (document.getElementById('input-colonia') as HTMLInputElement).value.trim();
+    const calleNumero = (document.getElementById('input-calle') as HTMLInputElement).value.trim();
+    const descripcionLugar = (document.getElementById('input-descripcion') as HTMLTextAreaElement).value.trim();
+    const { distancia, empleados } = obtenerParametrosEvento();
+    const { margen, tarifaEmpleado, tarifaKm } = obtenerParametrosFinancieros();
+
+    if (!cliente || !fecha || !hora || !municipio || !colonia || !calleNumero) {
+      mostrarMensaje('error', 'Completa los datos del cliente y del evento.', 'mensaje-modal');
+      return;
+    }
+    if (carrito.length === 0) {
+      mostrarMensaje('error', 'Agrega al menos un producto a la lista.', 'mensaje-modal');
+      return;
+    }
+
+    const btn = document.getElementById('btn-guardar-cotizacion') as HTMLButtonElement | null;
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/cotizaciones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          cliente_nombre: cliente,
+          fecha_evento: fecha,
+          hora_evento: hora,
+          municipio,
+          colonia,
+          calle_numero: calleNumero,
+          descripcion_lugar: descripcionLugar || null,
+          total_invitados: totalUnidades,
+          distancia_km: distancia,
+          numero_empleados: empleados,
+          margen_ganancia_porcentaje: margen,
+          tarifa_por_empleado: tarifaEmpleado,
+          tarifa_por_km: tarifaKm,
+          productos: carrito.map(item => ({ producto_id: item.producto_id, cantidad: item.cantidad })),
+        }),
+      });
+      let json: any = null;
+      try {
+        json = await res.json();
+      } catch {
+        json = null;
+      }
+      if (res.ok && json?.exito) {
+        mostrarMensaje('exito', 'Cotizacion creada con exito.', 'mensaje-modal');
+        limpiarFormulario();
+        cerrarModal();
+      } else {
+        const mensajes = json?.errors
+          ? Object.values(json.errors).flat().join('. ')
+          : json?.mensaje || `Error ${res.status}: No se pudo crear la cotizacion.`;
+        mostrarMensaje('error', mensajes, 'mensaje-modal');
+      }
+    } catch {
+      mostrarMensaje('error', 'No se pudo conectar con la API.', 'mensaje-modal');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '💾 Guardar y Crear Cotizacion';
+      }
+    }
+  }
+
+  function abrirModal() {
+    if (carrito.length === 0) {
+      mostrarMensaje('error', 'Agrega al menos un producto para continuar.');
+      return;
+    }
+    document.getElementById('mensaje-modal')?.classList.add('hidden');
+    const overlay = document.getElementById('modal-overlay');
+    const contenido = document.getElementById('modal-contenido');
+    overlay?.classList.remove('hidden');
+    overlay?.classList.add('flex');
+    setTimeout(() => {
+      contenido?.classList.remove('scale-95', 'opacity-0');
+      contenido?.classList.add('scale-100', 'opacity-100');
+    }, 10);
+  }
+
+  function cerrarModal() {
+    const overlay = document.getElementById('modal-overlay');
+    const contenido = document.getElementById('modal-contenido');
+    contenido?.classList.remove('scale-100', 'opacity-100');
+    contenido?.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+      overlay?.classList.add('hidden');
+      overlay?.classList.remove('flex');
+    }, 200);
+  }
+
+  document.getElementById('lista-productos')?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('button[data-action="agregar"]') as HTMLButtonElement | null;
+    if (!btn) return;
+    const id = parseInt(btn.dataset.productoId || '0', 10);
+    if (id) agregarProducto(id);
+  });
+
+  document.getElementById('lista-carrito')?.addEventListener('input', (e) => {
+    const input = (e.target as HTMLElement).closest('.input-cantidad') as HTMLInputElement | null;
+    if (!input) return;
+    const id = parseInt(input.dataset.productoId || '0', 10);
+    const item = carrito.find(p => p.producto_id === id);
+    if (!item) return;
+    const valor = parseFloat(input.value || '0');
+    item.cantidad = valor > 0 ? valor : 1;
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => actualizarTotales(), 300);
+  });
+
+  document.getElementById('lista-carrito')?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('button[data-action="quitar"]') as HTMLButtonElement | null;
+    if (!btn) return;
+    const id = parseInt(btn.dataset.productoId || '0', 10);
+    carrito = carrito.filter(item => item.producto_id !== id);
+    renderizarCarrito();
+    actualizarTotales();
+  });
+
+  ['input-distancia', 'input-empleados', 'input-margen', 'input-tarifa-empleado', 'input-tarifa-km', 'input-cliente'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => actualizarTotales(), 300);
+    });
+  });
+
+  document.getElementById('btn-abrir-modal')?.addEventListener('click', () => abrirModal());
+  document.getElementById('btn-guardar-cotizacion')?.addEventListener('click', () => guardarCotizacion());
+  document.getElementById('btn-cerrar-modal')?.addEventListener('click', () => cerrarModal());
+  document.getElementById('btn-cancelar-modal')?.addEventListener('click', () => cerrarModal());
+  document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modal-overlay')) cerrarModal();
+  });
+
+  cargarProductos();
+  renderizarCarrito();
+</script>
+
+

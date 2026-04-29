@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────
+   Raspados Yeti ERP — Sistema de Diseño (Tailwind v4)
+   Tema claro, profesional, baja fatiga visual
+   ─────────────────────────────────────────────────────── */
+
+/* Google Font: Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@theme {
+  --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+
+  /* Paleta principal: Azul Glaciar */
+  --color-yeti-50: #eff6ff;
+  --color-yeti-100: #dbeafe;
+  --color-yeti-200: #bfdbfe;
+  --color-yeti-300: #93c5fd;
+  --color-yeti-400: #60a5fa;
+  --color-yeti-500: #3b82f6;
+  --color-yeti-600: #2563eb;
+  --color-yeti-700: #1d4ed8;
+  --color-yeti-800: #1e40af;
+  --color-yeti-900: #1e3a8a;
+
+  /* Acento: Cian Escarcha */
+  --color-frost-400: #22d3ee;
+  --color-frost-500: #06b6d4;
+  --color-frost-600: #0891b2;
+
+  /* Éxito/Ganancia */
+  --color-ganancia-50: #ecfdf5;
+  --color-ganancia-100: #d1fae5;
+  --color-ganancia-200: #a7f3d0;
+  --color-ganancia-500: #10b981;
+  --color-ganancia-600: #059669;
+  --color-ganancia-700: #047857;
+
+  /* Alerta/Costo */
+  --color-costo-50: #fffbeb;
+  --color-costo-100: #fef3c7;
+  --color-costo-400: #fbbf24;
+  --color-costo-500: #f59e0b;
+  --color-costo-600: #d97706;
+
+  /* Superficies */
+  --color-superficie-50: #f8fafc;
+  --color-superficie-100: #f1f5f9;
+  --color-superficie-200: #e2e8f0;
+  --color-superficie-300: #cbd5e1;
+
+  /* Texto */
+  --color-texto-900: #0f172a;
+  --color-texto-700: #334155;
+  --color-texto-500: #64748b;
+  --color-texto-400: #94a3b8;
+
+  /* Sombras personalizadas */
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-panel: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.06);
+}
+
+/* ── SVG Sizing Fix ──────────────────────────────────── */
+/* Tailwind v4 necesita que los SVGs inline hereden tamaño correctamente */
+svg {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* ── Scrollbar personalizada ─────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-superficie-100);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-superficie-300);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-yeti-400);
+}

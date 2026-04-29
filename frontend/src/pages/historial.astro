@@ -1,0 +1,161 @@
+---
+/**
+ * Pagina: Historial de Cotizaciones
+ *
+ * Vista administrativa para consultar y descargar PDFs.
+ */
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout titulo="Historial de Cotizaciones" descripcion="Historial de cotizaciones - Raspados Yeti ERP">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h3 class="text-2xl font-bold text-texto-900">Historial de Cotizaciones</h3>
+      <p class="text-texto-500 mt-1">Consulta cotizaciones guardadas y descarga sus PDFs</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-superficie-200 shadow-card overflow-hidden">
+    <div class="px-6 py-4 border-b border-superficie-200 flex items-center justify-between bg-superficie-50/50">
+      <p class="text-xs text-texto-400" id="contador-historial">Cargando...</p>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-superficie-50 border-b border-superficie-200">
+            <th class="text-left px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-texto-500">Cliente y Fecha</th>
+            <th class="text-left px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-texto-500">Ubicacion</th>
+            <th class="text-right px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-texto-500">Total</th>
+            <th class="text-center px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-texto-500">Estado</th>
+            <th class="text-center px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-texto-500">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-historial" class="divide-y divide-superficie-100">
+          <tr>
+            <td colspan="5" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="w-8 h-8 border-2 border-yeti-300 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-sm text-texto-400">Cargando cotizaciones...</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const API_BASE = 'http://127.0.0.1:8001/api/v1';
+  let cotizaciones = [];
+
+  function badgeEstado(estado) {
+    const mapa = {
+      Pendiente: 'bg-yeti-50 text-yeti-700 border-yeti-200',
+      Confirmado: 'bg-ganancia-50 text-ganancia-700 border-ganancia-200',
+      Cancelado: 'bg-red-50 text-red-700 border-red-200',
+    };
+    const clase = mapa[estado] || 'bg-superficie-100 text-texto-600 border-superficie-200';
+    return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${clase}">${estado}</span>`;
+  }
+
+  function formatearFecha(fecha) {
+    if (!fecha) return '—';
+    const fechaObj = new Date(fecha);
+    if (Number.isNaN(fechaObj.getTime())) return fecha;
+    return fechaObj.toLocaleDateString('es-MX', { dateStyle: 'medium' });
+  }
+
+  function renderizarTabla() {
+    const tbody = document.getElementById('tbody-historial');
+    const contador = document.getElementById('contador-historial');
+    if (!tbody || !contador) return;
+
+    if (!cotizaciones.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="px-6 py-12 text-center">
+            <p class="text-sm text-texto-500">No hay cotizaciones registradas</p>
+          </td>
+        </tr>`;
+      contador.textContent = '0 cotizaciones';
+      return;
+    }
+
+    contador.textContent = `${cotizaciones.length} cotizacion${cotizaciones.length === 1 ? '' : 'es'}`;
+    tbody.innerHTML = cotizaciones.map(c => `
+      <tr>
+        <td class="px-6 py-4">
+          <div class="text-sm font-semibold text-texto-900">${c.cliente_nombre}</div>
+          <div class="text-xs text-texto-400">${formatearFecha(c.fecha_evento)}</div>
+        </td>
+        <td class="px-6 py-4">
+          <div class="text-sm text-texto-700">${c.municipio} / ${c.colonia}</div>
+          <div class="text-xs text-texto-400">${c.calle_numero}</div>
+        </td>
+        <td class="px-6 py-4 text-right">
+          <span class="text-sm font-semibold text-texto-900">$${parseFloat(c.total_precio).toFixed(2)}</span>
+        </td>
+        <td class="px-6 py-4 text-center">${badgeEstado(c.estado)}</td>
+        <td class="px-6 py-4 text-center">
+          <button data-action="pdf" data-id="${c.id}"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-yeti-50 text-yeti-600 hover:bg-yeti-100 border border-yeti-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0 0l-2 2m2-2l2 2M6 20h12a2 2 0 002-2v-7a2 2 0 00-2-2h-2.5a1.5 1.5 0 01-1.5-1.5V5a2 2 0 00-2-2H6a2 2 0 00-2 2v13a2 2 0 002 2z" />
+            </svg>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function cargarCotizaciones() {
+    try {
+      const res = await fetch(`${API_BASE}/cotizaciones`);
+      const json = await res.json();
+      if (json.exito) {
+        cotizaciones = json.datos || [];
+      }
+      renderizarTabla();
+    } catch {
+      const tbody = document.getElementById('tbody-historial');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="px-6 py-12 text-center">
+              <p class="text-sm text-texto-500">No se pudo cargar el historial</p>
+            </td>
+          </tr>`;
+      }
+    }
+  }
+
+  async function descargarPdf(id) {
+    try {
+      const res = await fetch(`${API_BASE}/cotizaciones/${id}/pdf`);
+      if (!res.ok) throw new Error('No se pudo descargar el PDF');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `cotizacion-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert('No se pudo descargar el PDF.');
+    }
+  }
+
+  document.getElementById('tbody-historial')?.addEventListener('click', (e) => {
+    const btn = (e.target).closest('button[data-action="pdf"]');
+    if (!btn) return;
+    const id = parseInt(btn.dataset.id || '0', 10);
+    if (id) descargarPdf(id);
+  });
+
+  cargarCotizaciones();
+</script>

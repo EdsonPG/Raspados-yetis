@@ -1,0 +1,517 @@
+---
+/**
+ * Página: Insumos (Materia Prima)
+ *
+ * Tabla elegante para listar, agregar y gestionar los insumos
+ * a granel utilizados en la producción de snacks.
+ *
+ * Consume: GET /api/v1/insumos
+ * Envía:   POST /api/v1/insumos
+ */
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout titulo="Insumos" descripcion="Gestión de materia prima — Raspados Yeti ERP">
+
+  <!-- Cabecera de la vista -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h3 class="text-2xl font-bold text-texto-900">Materia Prima</h3>
+      <p class="text-texto-500 mt-1">Gestiona los insumos a granel para la producción de snacks</p>
+    </div>
+    <button id="btn-agregar-insumo"
+            class="inline-flex items-center gap-2 px-4 py-2.5 bg-yeti-600 text-white text-sm font-medium rounded-lg
+                   hover:bg-yeti-700 active:bg-yeti-800 shadow-sm hover:shadow-md
+                   focus:outline-none focus:ring-2 focus:ring-yeti-500 focus:ring-offset-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+      </svg>
+      Agregar Insumo
+    </button>
+  </div>
+
+  <!-- Tabla de insumos -->
+  <div class="bg-white rounded-xl border border-superficie-200 shadow-card overflow-hidden">
+
+    <!-- Barra de búsqueda y filtros -->
+    <div class="px-6 py-4 border-b border-superficie-200 flex items-center justify-between bg-superficie-50/50">
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-texto-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <input type="text" id="buscar-insumo" placeholder="Buscar insumo..."
+               class="pl-10 pr-4 py-2 w-72 text-sm border border-superficie-200 rounded-lg bg-white
+                      focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400
+                      placeholder:text-texto-400" />
+      </div>
+      <p id="contador-insumos" class="text-xs text-texto-400">Cargando...</p>
+    </div>
+
+    <!-- Tabla -->
+    <div class="overflow-x-auto">
+      <table class="w-full" id="tabla-insumos">
+        <thead>
+          <tr class="bg-superficie-50 border-b border-superficie-200">
+            <th class="text-left px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-texto-500">ID</th>
+            <th class="text-left px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-texto-500">Nombre</th>
+            <th class="text-left px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-texto-500">Unidad de Medida</th>
+            <th class="text-left px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-texto-500">Stock Actual</th>
+            <th class="text-right px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-texto-500">Costo Adquisición</th>
+            <th class="text-center px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-texto-500">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-insumos" class="divide-y divide-superficie-100">
+          <!-- Skeleton loader -->
+          <tr id="skeleton-row">
+            <td colspan="6" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="w-8 h-8 border-2 border-yeti-300 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-sm text-texto-400">Cargando insumos...</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="px-6 py-4 border-t border-superficie-200 flex items-center justify-between bg-superficie-50/50">
+      <p id="info-paginacion" class="text-xs text-texto-400">—</p>
+      <div class="flex gap-1" id="controles-paginacion"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODAL: Agregar Insumo ═══════════════ -->
+  <div id="modal-overlay"
+       class="fixed inset-0 z-50 hidden items-center justify-center bg-black/30 backdrop-blur-sm">
+    <div id="modal-contenido"
+         class="bg-white rounded-2xl shadow-panel w-full max-w-md mx-4 transform scale-95 opacity-0"
+         style="transition: transform 200ms ease-out, opacity 200ms ease-out;">
+
+      <!-- Header del modal -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-superficie-200">
+        <h4 id="titulo-modal" class="text-lg font-semibold text-texto-900">Nuevo Insumo</h4>
+        <button id="btn-cerrar-modal"
+                class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-superficie-100 text-texto-400 hover:text-texto-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Formulario -->
+      <form id="form-insumo" class="p-6 space-y-4">
+        <!-- Nombre -->
+        <div>
+          <label for="input-nombre" class="block text-sm font-medium text-texto-700 mb-1.5">Nombre del insumo</label>
+          <input type="text" id="input-nombre" name="nombre" required
+                 placeholder="Ej. Jarabe de Fresa"
+                 class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                        focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400
+                        placeholder:text-texto-400" />
+        </div>
+
+        <!-- Unidad de medida -->
+        <div>
+          <label for="input-unidad" class="block text-sm font-medium text-texto-700 mb-1.5">Unidad de medida</label>
+          <select id="input-unidad" name="unidad_medida" required
+                  class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                         focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400
+                         text-texto-700">
+            <option value="" disabled selected>Seleccionar unidad</option>
+            <option value="litros">Litros</option>
+            <option value="kg">Kilogramos (kg)</option>
+            <option value="piezas">Piezas</option>
+            <option value="ml">Mililitros (ml)</option>
+            <option value="gramos">Gramos (g)</option>
+          </select>
+        </div>
+
+        <!-- Costo -->
+        <div>
+          <label for="input-costo" class="block text-sm font-medium text-texto-700 mb-1.5">Costo de adquisición (MXN)</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-texto-400 font-medium">$</span>
+            <input type="number" id="input-costo" name="costo_adquisicion" required
+                   step="0.01" min="0" placeholder="0.00"
+                   class="w-full pl-7 pr-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                          focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400
+                          placeholder:text-texto-400" />
+          </div>
+          <p class="text-[11px] text-texto-400 mt-1">Precio por unidad de medida</p>
+        </div>
+
+        <!-- Categoria -->
+        <div>
+          <label for="input-categoria" class="block text-sm font-medium text-texto-700 mb-1.5">Categoria</label>
+          <input type="text" id="input-categoria" name="categoria" required
+                 placeholder="Ej. Liquidos, Solidos, Desechables"
+                 class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                        focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400
+                        placeholder:text-texto-400" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="input-stock-actual" class="block text-sm font-medium text-texto-700 mb-1.5">Stock Actual</label>
+            <input type="number" id="input-stock-actual" name="stock_actual" required
+                   step="0.01" min="0" placeholder="0.00"
+                   class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                          focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400
+                          placeholder:text-texto-400" />
+          </div>
+          <div>
+            <label for="input-stock-minimo" class="block text-sm font-medium text-texto-700 mb-1.5">Stock Minimo</label>
+            <input type="number" id="input-stock-minimo" name="stock_minimo" required
+                   step="0.01" min="0" placeholder="0.00"
+                   class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-lg bg-white
+                          focus:outline-none focus:ring-2 focus:ring-yeti-500/30 focus:border-yeti-400
+                          placeholder:text-texto-400" />
+          </div>
+        </div>
+
+        <!-- Mensaje de error -->
+        <div id="error-form" class="hidden rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"></div>
+
+        <!-- Botones -->
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" id="btn-cancelar"
+                  class="px-4 py-2.5 text-sm font-medium text-texto-700 bg-superficie-100 rounded-lg
+                         hover:bg-superficie-200 focus:outline-none">
+            Cancelar
+          </button>
+          <button type="submit" id="btn-guardar"
+                  class="px-5 py-2.5 text-sm font-medium text-white bg-yeti-600 rounded-lg
+                         hover:bg-yeti-700 active:bg-yeti-800 shadow-sm hover:shadow-md
+                         focus:outline-none focus:ring-2 focus:ring-yeti-500 focus:ring-offset-2
+                         disabled:opacity-50 disabled:cursor-not-allowed">
+            Guardar Insumo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</Layout>
+
+<script>
+  /**
+   * Lógica de la página de Insumos
+   *
+   * - Carga la lista de insumos desde la API
+   * - Maneja búsqueda en tiempo real
+   * - Modal para agregar nuevos insumos
+   * - Eliminar insumos con confirmación
+   */
+
+  const API_BASE = 'http://127.0.0.1:8001/api/v1';
+  let todosLosInsumos: any[] = [];
+  let insumoEditandoId: number | null = null;
+
+  function formatearCantidad(valor: number): string {
+    if (Number.isNaN(valor)) return '0.00';
+    return valor.toFixed(2);
+  }
+
+  // ── Cargar insumos ──────────────────────────────────
+  async function cargarInsumos() {
+    try {
+      const res = await fetch(`${API_BASE}/insumos?per_page=100`);
+      const json = await res.json();
+
+      if (json.exito) {
+        todosLosInsumos = json.datos.data;
+        renderizarTabla(todosLosInsumos);
+        actualizarContador(json.datos.total);
+      }
+    } catch {
+      const tbody = document.getElementById('tbody-insumos');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                <p class="text-sm text-texto-500">No se pudo conectar con la API</p>
+                <p class="text-xs text-texto-400">Asegúrate de que Laravel esté corriendo en el puerto 8001</p>
+              </div>
+            </td>
+          </tr>`;
+      }
+    }
+  }
+
+  // ── Renderizar tabla ────────────────────────────────
+  function renderizarTabla(insumos: any[]) {
+    const tbody = document.getElementById('tbody-insumos');
+    if (!tbody) return;
+
+    if (insumos.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="px-6 py-12 text-center">
+            <div class="flex flex-col items-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-superficie-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+              </svg>
+              <p class="text-sm text-texto-500">No hay insumos registrados</p>
+              <p class="text-xs text-texto-400">Haz clic en "Agregar Insumo" para comenzar</p>
+            </div>
+          </td>
+        </tr>`;
+      return;
+    }
+
+    tbody.innerHTML = insumos.map(insumo => {
+      const stockActual = parseFloat(insumo.stock_actual ?? 0);
+      const stockMinimo = parseFloat(insumo.stock_minimo ?? 0);
+      const badge = stockActual <= stockMinimo
+        ? '<span class="ml-2 inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-semibold border border-amber-200">Bajo Stock</span>'
+        : '';
+      return `
+      <tr class="hover:bg-superficie-50/80" data-id="${insumo.id}">
+        <td class="px-6 py-4">
+          <span class="text-xs font-mono text-texto-400 bg-superficie-100 px-2 py-0.5 rounded">#${insumo.id}</span>
+        </td>
+        <td class="px-6 py-4">
+          <span class="text-sm font-medium text-texto-900">${insumo.nombre}</span>
+          <p class="text-xs text-texto-400 mt-0.5">${insumo.categoria || 'General'}</p>
+        </td>
+        <td class="px-6 py-4">
+          <span class="inline-flex items-center gap-1.5 text-xs font-medium text-yeti-700 bg-yeti-50 px-2.5 py-1 rounded-full border border-yeti-200">
+            ${obtenerIconoUnidad(insumo.unidad_medida)}
+            ${insumo.unidad_medida}
+          </span>
+        </td>
+        <td class="px-6 py-4">
+          <div class="flex items-center">
+            <span class="text-sm font-semibold text-texto-900">${formatearCantidad(stockActual)} ${insumo.unidad_medida}</span>
+            ${badge}
+          </div>
+        </td>
+        <td class="px-6 py-4 text-right">
+          <span class="text-sm font-semibold text-texto-900">$${parseFloat(insumo.costo_adquisicion).toFixed(2)}</span>
+          <span class="text-[10px] text-texto-400 ml-1">/ ${insumo.unidad_medida}</span>
+        </td>
+        <td class="px-6 py-4 text-center">
+          <div class="flex items-center justify-center gap-2">
+            <button data-action="editar" data-id="${insumo.id}"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-texto-700
+                           bg-superficie-100 rounded-lg hover:bg-superficie-200 border border-superficie-200">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 7.125L16.862 4.487" />
+              </svg>
+              Editar
+            </button>
+            <button data-action="eliminar" data-id="${insumo.id}"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-600
+                           bg-red-50 rounded-lg hover:bg-red-100 border border-red-200">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+              </svg>
+              Eliminar
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── Iconos por unidad de medida ─────────────────────
+  function obtenerIconoUnidad(unidad: string): string {
+    const iconos: Record<string, string> = {
+      litros: '💧',
+      ml: '💧',
+      kg: '⚖️',
+      gramos: '⚖️',
+      piezas: '📦',
+    };
+    return iconos[unidad] || '📋';
+  }
+
+  // ── Actualizar contador ─────────────────────────────
+  function actualizarContador(total: number) {
+    const el = document.getElementById('contador-insumos');
+    if (el) el.textContent = `${total} insumo${total !== 1 ? 's' : ''} registrado${total !== 1 ? 's' : ''}`;
+  }
+
+  // ── Búsqueda en tiempo real ─────────────────────────
+  document.getElementById('buscar-insumo')?.addEventListener('input', (e) => {
+    const query = (e.target as HTMLInputElement).value.toLowerCase();
+    const filtrados = todosLosInsumos.filter(i =>
+      i.nombre.toLowerCase().includes(query) ||
+      i.unidad_medida.toLowerCase().includes(query) ||
+      (i.categoria || '').toLowerCase().includes(query)
+    );
+    renderizarTabla(filtrados);
+  });
+
+  // ── Modal: Abrir / Cerrar ──────────────────────────
+  const modalOverlay = document.getElementById('modal-overlay');
+  const modalContenido = document.getElementById('modal-contenido');
+
+  function abrirModal(insumo?: any) {
+    const titulo = document.getElementById('titulo-modal');
+    const btnGuardar = document.getElementById('btn-guardar');
+    document.getElementById('error-form')?.classList.add('hidden');
+
+    if (insumo) {
+      insumoEditandoId = insumo.id;
+      if (titulo) titulo.textContent = 'Editar Insumo';
+      if (btnGuardar) btnGuardar.textContent = 'Actualizar Insumo';
+
+      (document.getElementById('input-nombre') as HTMLInputElement).value = insumo.nombre || '';
+      (document.getElementById('input-unidad') as HTMLSelectElement).value = insumo.unidad_medida || '';
+      (document.getElementById('input-costo') as HTMLInputElement).value = formatearCantidad(parseFloat(insumo.costo_adquisicion || 0));
+      (document.getElementById('input-categoria') as HTMLInputElement).value = insumo.categoria || 'General';
+      (document.getElementById('input-stock-actual') as HTMLInputElement).value = formatearCantidad(parseFloat(insumo.stock_actual || 0));
+      (document.getElementById('input-stock-minimo') as HTMLInputElement).value = formatearCantidad(parseFloat(insumo.stock_minimo || 0));
+    } else {
+      insumoEditandoId = null;
+      if (titulo) titulo.textContent = 'Nuevo Insumo';
+      if (btnGuardar) btnGuardar.textContent = 'Guardar Insumo';
+      (document.getElementById('form-insumo') as HTMLFormElement)?.reset();
+      (document.getElementById('input-categoria') as HTMLInputElement).value = 'General';
+      (document.getElementById('input-stock-actual') as HTMLInputElement).value = '0.00';
+      (document.getElementById('input-stock-minimo') as HTMLInputElement).value = '0.00';
+    }
+
+    modalOverlay?.classList.remove('hidden');
+    modalOverlay?.classList.add('flex');
+    setTimeout(() => {
+      modalContenido?.classList.remove('scale-95', 'opacity-0');
+      modalContenido?.classList.add('scale-100', 'opacity-100');
+    }, 10);
+  }
+
+  function cerrarModal() {
+    modalContenido?.classList.remove('scale-100', 'opacity-100');
+    modalContenido?.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+      modalOverlay?.classList.add('hidden');
+      modalOverlay?.classList.remove('flex');
+      // Resetear formulario
+      (document.getElementById('form-insumo') as HTMLFormElement)?.reset();
+      document.getElementById('error-form')?.classList.add('hidden');
+      insumoEditandoId = null;
+    }, 200);
+  }
+
+  document.getElementById('btn-agregar-insumo')?.addEventListener('click', abrirModal);
+  document.getElementById('btn-cerrar-modal')?.addEventListener('click', cerrarModal);
+  document.getElementById('btn-cancelar')?.addEventListener('click', cerrarModal);
+  modalOverlay?.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) cerrarModal();
+  });
+
+  // ── Formulario: Guardar insumo ──────────────────────
+  document.getElementById('form-insumo')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btnGuardar = document.getElementById('btn-guardar') as HTMLButtonElement;
+    const errorDiv = document.getElementById('error-form');
+
+    // Obtener datos del formulario
+    const nombre = (document.getElementById('input-nombre') as HTMLInputElement).value;
+    const unidad = (document.getElementById('input-unidad') as HTMLSelectElement).value;
+    const costo = parseFloat((document.getElementById('input-costo') as HTMLInputElement).value);
+    const categoria = (document.getElementById('input-categoria') as HTMLInputElement).value;
+    const stockActual = parseFloat((document.getElementById('input-stock-actual') as HTMLInputElement).value);
+    const stockMinimo = parseFloat((document.getElementById('input-stock-minimo') as HTMLInputElement).value);
+
+    // Estado de carga
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = 'Guardando...';
+
+    const esEdicion = insumoEditandoId !== null;
+
+    try {
+      const endpoint = esEdicion ? `${API_BASE}/insumos/${insumoEditandoId}` : `${API_BASE}/insumos`;
+      const metodo = esEdicion ? 'PUT' : 'POST';
+      const res = await fetch(endpoint, {
+        method: metodo,
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          nombre,
+          unidad_medida: unidad,
+          costo_adquisicion: costo,
+          categoria,
+          stock_actual: stockActual,
+          stock_minimo: stockMinimo,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (res.ok && json.exito) {
+        cerrarModal();
+        cargarInsumos(); // Recargar tabla
+      } else {
+        // Mostrar errores de validación
+        const mensajes = json.errors
+          ? Object.values(json.errors).flat().join('. ')
+          : json.mensaje || 'Error al guardar el insumo.';
+        if (errorDiv) {
+          errorDiv.textContent = mensajes;
+          errorDiv.classList.remove('hidden');
+        }
+      }
+    } catch {
+      if (errorDiv) {
+        errorDiv.textContent = 'No se pudo conectar con la API. Verifica que Laravel esté corriendo.';
+        errorDiv.classList.remove('hidden');
+      }
+    } finally {
+      btnGuardar.disabled = false;
+      btnGuardar.textContent = esEdicion ? 'Actualizar Insumo' : 'Guardar Insumo';
+    }
+  });
+
+  function buscarInsumo(id: number) {
+    return todosLosInsumos.find(i => i.id === id);
+  }
+
+  function editarInsumo(id: number) {
+    const insumo = buscarInsumo(id);
+    if (!insumo) return;
+    abrirModal(insumo);
+  }
+
+  // ── Eliminar insumo ─────────────────────────────────
+  async function eliminarInsumo(id: number, nombre: string) {
+    if (!confirm(`¿Estás seguro de eliminar "${nombre}"? Esta acción no se puede deshacer.`)) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/insumos/${id}`, {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json' },
+      });
+
+      if (res.ok) {
+        cargarInsumos();
+      }
+    } catch {
+      alert('Error al eliminar el insumo.');
+    }
+  }
+
+  document.getElementById('tbody-insumos')?.addEventListener('click', (e) => {
+    const boton = (e.target as HTMLElement).closest('button[data-action]') as HTMLButtonElement | null;
+    if (!boton) return;
+    const id = parseInt(boton.dataset.id || '0', 10);
+    if (!id) return;
+    if (boton.dataset.action === 'editar') {
+      editarInsumo(id);
+      return;
+    }
+    if (boton.dataset.action === 'eliminar') {
+      const insumo = buscarInsumo(id);
+      eliminarInsumo(id, insumo?.nombre || 'este insumo');
+    }
+  });
+
+  // ── Inicializar ─────────────────────────────────────
+  cargarInsumos();
+</script>
