@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
+/* Google Font: Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 /* ───────────────────────────────────────────────────────
    Raspados Yeti ERP — Sistema de Diseño (Tailwind v4)
    Tema claro, profesional, baja fatiga visual
    ─────────────────────────────────────────────────────── */
-
-/* Google Font: Inter */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @theme {
   --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
