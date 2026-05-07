@@ -4,14 +4,14 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout titulo="Agenda Centralizada" descripcion="Gestión de eventos y calendario logístico">
   
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-8rem)]">
+  <div class="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:h-[calc(100vh-8rem)]">
     
     <!-- ═══════════════ LISTA DE TAREAS (Izquierda) ═══════════════ -->
-    <div class="lg:col-span-2 bg-white rounded-2xl shadow-panel border border-superficie-200 flex flex-col overflow-hidden relative">
+    <div class="order-1 lg:order-none lg:col-span-2 bg-white rounded-2xl shadow-panel border border-superficie-200 flex flex-col overflow-hidden relative min-h-[50vh] lg:min-h-0">
       
       <!-- Header con título y contador -->
-      <div class="shrink-0 px-6 py-4 border-b border-superficie-200 bg-superficie-50">
-        <div class="flex items-center justify-between mb-4">
+      <div class="shrink-0 px-4 sm:px-6 py-4 border-b border-superficie-200 bg-superficie-50">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-yeti-100 border border-yeti-200 flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yeti-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -23,7 +23,7 @@ import Layout from '../layouts/Layout.astro';
               <p id="lista-contador" class="text-xs text-texto-500">Cargando...</p>
             </div>
           </div>
-          <button id="btn-nuevo-evento" class="flex items-center gap-2 px-4 py-2.5 bg-yeti-600 hover:bg-yeti-700 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95">
+          <button id="btn-nuevo-evento" class="w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-2.5 sm:px-4 sm:py-2.5 bg-yeti-600 hover:bg-yeti-700 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 whitespace-nowrap">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
@@ -40,22 +40,22 @@ import Layout from '../layouts/Layout.astro';
         </div>
 
         <!-- Pestañas -->
-        <div class="flex gap-1 p-1 bg-superficie-200 rounded-xl">
-          <button class="tab-btn active flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-white text-yeti-700 shadow-sm transition-all" data-tab="proximamente">
+        <div class="flex flex-wrap sm:flex-nowrap gap-1 p-1 bg-superficie-200 rounded-xl overflow-x-auto">
+          <button class="tab-btn active flex-1 min-w-0 px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-white text-yeti-700 shadow-sm transition-all whitespace-nowrap" data-tab="proximamente">
             <span class="flex items-center justify-center gap-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               Próximamente
               <span id="count-proximamente" class="ml-1 text-[10px] bg-yeti-100 text-yeti-700 px-1.5 py-0.5 rounded-full font-bold">0</span>
             </span>
           </button>
-          <button class="tab-btn flex-1 px-4 py-2 text-sm font-semibold rounded-lg text-texto-500 hover:text-texto-900 transition-all" data-tab="confirmar">
+          <button class="tab-btn flex-1 min-w-0 px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg text-texto-500 hover:text-texto-900 transition-all whitespace-nowrap" data-tab="confirmar">
             <span class="flex items-center justify-center gap-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               Por Confirmar
               <span id="count-confirmar" class="ml-1 text-[10px] bg-costo-100 text-costo-700 px-1.5 py-0.5 rounded-full font-bold">0</span>
             </span>
           </button>
-          <button class="tab-btn flex-1 px-4 py-2 text-sm font-semibold rounded-lg text-texto-500 hover:text-texto-900 transition-all" data-tab="completados">
+          <button class="tab-btn flex-1 min-w-0 px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg text-texto-500 hover:text-texto-900 transition-all whitespace-nowrap" data-tab="completados">
             <span class="flex items-center justify-center gap-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               Completados
@@ -77,8 +77,19 @@ import Layout from '../layouts/Layout.astro';
     </div>
 
     <!-- ═══════════════ PANEL DE DETALLES (Derecha) ═══════════════ -->
-    <div class="bg-white rounded-2xl shadow-panel border border-superficie-200 flex flex-col overflow-hidden relative">
+    <div id="panel-detalles-wrapper" class="order-2 lg:order-none bg-white rounded-2xl shadow-panel border border-superficie-200 flex flex-col overflow-hidden relative min-h-[40vh] lg:min-h-0">
       
+      <!-- Barra móvil sticky de cierre (visible solo en pantallas < lg) -->
+      <div id="mobile-close-bar" class="lg:hidden shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-superficie-200 bg-superficie-50 sticky top-0 z-20">
+        <span class="text-sm font-bold text-texto-700">Detalles del Evento</span>
+        <button id="btn-cerrar-panel-mobile" class="flex items-center gap-1.5 text-texto-500 hover:text-texto-900 bg-superficie-100 hover:bg-superficie-200 px-3 py-1.5 rounded-lg transition-colors text-xs font-semibold">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Cerrar
+        </button>
+      </div>
+
       <!-- Estado Vacío (cuando no hay evento seleccionado) -->
       <div id="panel-vacio" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center z-10 bg-white transition-opacity duration-300">
         <div class="w-20 h-20 rounded-full bg-yeti-50 flex items-center justify-center mb-4 border-4 border-white shadow-sm">
@@ -303,6 +314,13 @@ function initListeners() {
 
   document.getElementById('btn-cerrar-panel').addEventListener('click', cerrarPanel);
 
+  // Botón cerrar móvil — cierra panel y hace scroll arriba
+  document.getElementById('btn-cerrar-panel-mobile').addEventListener('click', () => {
+    cerrarPanel();
+    // Scroll suave hacia la lista de tareas
+    document.querySelector('.order-1')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
   document.querySelectorAll('.btn-estado').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       await cambiarEstadoEvento(e.currentTarget.dataset.estado);
@@ -430,10 +448,10 @@ function renderView() {
 
     html += `
       <div>
-        <div class="flex items-center gap-3 mb-3 px-1">
-          <div class="w-12 h-12 rounded-xl ${esHoy ? 'bg-yeti-500 text-white' : 'bg-white border border-superficie-200'} flex flex-col items-center justify-center shrink-0 shadow-sm">
-            <p class="text-[9px] font-bold uppercase leading-none ${esHoy ? 'text-yeti-100' : 'text-texto-400'}">${meses[mesIdx].slice(0,3)}</p>
-            <p class="text-lg font-black leading-none mt-0.5">${dia}</p>
+        <div class="flex items-center gap-2 sm:gap-3 mb-3 px-1">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${esHoy ? 'bg-yeti-500 text-white' : 'bg-white border border-superficie-200'} flex flex-col items-center justify-center shrink-0 shadow-sm">
+            <p class="text-[8px] sm:text-[9px] font-bold uppercase leading-none ${esHoy ? 'text-yeti-100' : 'text-texto-400'}">${meses[mesIdx].slice(0,3)}</p>
+            <p class="text-base sm:text-lg font-black leading-none mt-0.5">${dia}</p>
           </div>
           <div>
             <p class="text-sm font-semibold ${esHoy ? 'text-yeti-700' : 'text-texto-700'}">${esHoy ? 'Hoy' : diaSemana}</p>
@@ -441,7 +459,7 @@ function renderView() {
           </div>
           <div class="flex-1 h-px bg-superficie-200 ml-2"></div>
         </div>
-        <div class="space-y-2 pl-1">`;
+        <div class="space-y-2 pl-0 sm:pl-1">`;
 
     eventos.forEach(ev => {
       const c = estadosConfig[ev.estado] || estadosConfig['Cotizado'];
@@ -450,19 +468,19 @@ function renderView() {
 
       html += `
           <div onclick="window.seleccionarEvento(${ev.id})"
-               class="bg-white p-4 rounded-xl shadow-sm border ${ring} flex items-center gap-4 cursor-pointer transition-all group">
-            <div class="w-1 h-10 rounded-full ${c.icon} shrink-0"></div>
+               class="bg-white p-3 sm:p-4 rounded-xl shadow-sm border ${ring} flex items-center gap-2.5 sm:gap-4 cursor-pointer transition-all group">
+            <div class="w-1 h-8 sm:h-10 rounded-full ${c.icon} shrink-0"></div>
             <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-texto-900 truncate group-hover:text-yeti-700 transition-colors">${ev.cliente_nombre}</h3>
-              <p class="text-xs text-texto-500 truncate mt-0.5 flex items-center gap-1.5">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <h3 class="text-sm sm:text-base font-semibold text-texto-900 truncate group-hover:text-yeti-700 transition-colors">${ev.cliente_nombre}</h3>
+              <p class="text-[11px] sm:text-xs text-texto-500 truncate mt-0.5 flex items-center gap-1 sm:gap-1.5">
+                <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 ${(ev.hora_inicio || '').slice(0,5)} hrs
-                <span class="mx-1 text-superficie-300">·</span>
+                <span class="mx-0.5 sm:mx-1 text-superficie-300">·</span>
                 ${ev.paquete_contratado || 'Sin paquete'}
               </p>
             </div>
-            <span class="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold ${c.bg} ${c.text} border ${c.border}">${ev.estado}</span>
-            <svg class="w-4 h-4 text-texto-300 shrink-0 group-hover:text-yeti-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+            <span class="shrink-0 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-[11px] font-bold ${c.bg} ${c.text} border ${c.border}">${ev.estado}</span>
+            <svg class="w-4 h-4 text-texto-300 shrink-0 group-hover:text-yeti-500 transition-colors hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
           </div>`;
     });
 
@@ -481,6 +499,10 @@ window.seleccionarEvento = (id) => {
   if (!ev) return;
   renderView();
   mostrarDetalles(ev);
+  // En móvil, hacer scroll al panel de detalles
+  if (window.innerWidth < 1024) {
+    document.getElementById('panel-detalles-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 };
 
 function mostrarDetalles(ev) {
