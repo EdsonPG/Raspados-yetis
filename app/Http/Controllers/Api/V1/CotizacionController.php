@@ -15,6 +15,74 @@ use Illuminate\Validation\ValidationException;
  */
 class CotizacionController extends Controller
 {
+    public function cancelar($id): JsonResponse
+    {
+        $cotizacion = Cotizacion::find($id);
+
+        if (!$cotizacion) {
+            return response()->json(['exito' => false, 'mensaje' => 'Cotización no encontrada'], 404);
+        }
+
+        if ($cotizacion->estado !== 'Pendiente') {
+            return response()->json(['exito' => false, 'mensaje' => 'La cotización ya fue procesada o cancelada anteriormente.'], 400);
+        }
+
+        $cotizacion->estado = 'Cancelado';
+        $cotizacion->save();
+
+        return response()->json([
+            'exito' => true,
+            'mensaje' => 'Cotización cancelada permanentemente e ignorada de la agenda.',
+        ]);
+    }
+
+    public function aprobar($id): JsonResponse
+    {
+        $cotizacion = Cotizacion::find($id);
+
+        if (!$cotizacion) {
+            return response()->json(['exito' => false, 'mensaje' => 'Cotización no encontrada'], 404);
+        }
+
+        if ($cotizacion->estado !== 'Pendiente') {
+            return response()->json(['exito' => false, 'mensaje' => 'La cotización ya fue procesada o cancelada anteriormente.'], 400);
+        }
+
+        // 1. Encontrar o crear cliente para el CRM (Módulo C)
+        $cliente = \App\Models\Cliente::firstOrCreate(
+            ['nombre' => $cotizacion->cliente_nombre],
+            ['telefono' => 'Por actualizar', 'email' => 'pendiente@actualizar.com']
+        );
+
+        // 2. Crear el evento en la Agenda (Módulo B)
+        $evento = \App\Models\Evento::create([
+            'cliente_id' => $cliente->id,
+            'cliente_nombre' => $cliente->nombre,
+            'fecha_evento' => $cotizacion->fecha_evento,
+            'hora_inicio' => '12:00', // Valor por defecto
+            'hora_fin' => '17:00', // Valor por defecto
+            'municipio' => $cotizacion->municipio,
+            'colonia' => $cotizacion->colonia,
+            'calle_numero' => $cotizacion->calle_numero,
+            'paquete_contratado' => "Expediente Cotización #" . $cotizacion->id,
+            'total_invitados' => $cotizacion->total_invitados,
+            'total_precio' => $cotizacion->total_precio,
+            'estado' => 'Cotizado',
+            'cotizacion_id' => $cotizacion->id,
+            'notas' => 'Evento generado automáticamente mediante la aprobación de la Cotización #' . $cotizacion->id
+        ]);
+
+        // 3. Cambiar estado
+        $cotizacion->estado = 'Confirmado';
+        $cotizacion->save();
+
+        return response()->json([
+            'exito' => true,
+            'mensaje' => 'Cotización aprobada. El evento ha sido creado en la Agenda y asociado al CRM.',
+            'datos' => $evento
+        ]);
+    }
+
     public function index(): JsonResponse
     {
         $cotizaciones = Cotizacion::with('productos')

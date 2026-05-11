@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\InsumoController;
 use App\Http\Controllers\Api\V1\ProductoController;
 use App\Http\Controllers\Api\V1\CotizacionController;
 use App\Http\Controllers\Api\V1\EventoController;
+use App\Http\Controllers\Api\V1\ClienteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -72,6 +73,14 @@ Route::prefix('v1')->group(function () {
     Route::get('cotizaciones/{id}/pdf', [CotizacionController::class, 'downloadStoredPdf'])
         ->name('cotizaciones.pdf');
 
+    // POST /api/v1/cotizaciones/{id}/aprobar → Aprobar cotización y pasar a Agenda
+    Route::post('cotizaciones/{id}/aprobar', [CotizacionController::class, 'aprobar'])
+        ->name('cotizaciones.aprobar');
+
+    // POST /api/v1/cotizaciones/{id}/cancelar → Cancelar cotización
+    Route::post('cotizaciones/{id}/cancelar', [CotizacionController::class, 'cancelar'])
+        ->name('cotizaciones.cancelar');
+
     // ══════════════════════════════════════════════════════════════════════
     // ── Módulo B: Calendario y Gestión de Eventos ────────────────────────
     // ══════════════════════════════════════════════════════════════════════
@@ -88,4 +97,5 @@ Route::prefix('v1')->group(function () {
     // PATCH /api/v1/eventos/{id}/estado   → Cambiar estado (flujo validado)
     Route::patch('eventos/{id}/estado', [EventoController::class, 'cambiarEstado'])
          ->name('eventos.cambiar-estado');
-});
+    // ──────────────── Módulo C: CRM (Clientes y Eventos) ──────────────────────
+    Route::apiResource('clientes', ClienteController::class);});

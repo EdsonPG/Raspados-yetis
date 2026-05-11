@@ -73,7 +73,8 @@ class EventoController extends Controller
     {
         try {
             $datos = $request->validate([
-                'cliente_nombre'     => 'required|string|max:255',
+                'cliente_id'         => 'required|integer|exists:clientes,id',
+                'cliente_nombre'     => 'nullable|string|max:255',
                 'cliente_telefono'   => 'nullable|string|max:20',
                 'fecha_evento'       => 'required|date',
                 'hora_inicio'        => 'required|date_format:H:i',
@@ -95,6 +96,19 @@ class EventoController extends Controller
                 'mensaje' => 'Errores de validacion en la solicitud.',
                 'errors'  => $e->errors(),
             ], 422);
+        }
+
+        // Obtener el cliente para rellenar los datos redundantes (si la bd los exige)
+        if (!empty($datos['cliente_id'])) {
+            $cliente = \App\Models\Cliente::find($datos['cliente_id']);
+            if ($cliente) {
+                // Combinar nombre del cliente + Motivo del evento si lo enviaron desde el form
+                $motivo = $request->input('motivo_evento') ? ' (' . $request->input('motivo_evento') . ')' : '';
+                $datos['cliente_nombre'] = $cliente->nombre . $motivo;
+                $datos['cliente_telefono'] = $cliente->telefono;
+            }
+        } else {
+            return response()->json(['exito' => false, 'mensaje' => 'Se requiere un cliente válido.'], 400);
         }
 
         $evento = Evento::create($datos);

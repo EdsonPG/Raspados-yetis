@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Modelo: Cotizacion
@@ -16,6 +17,7 @@ class Cotizacion extends Model
     protected $table = 'cotizaciones';
 
     protected $fillable = [
+        'cliente_id',
         'cliente_nombre',
         'fecha_evento',
         'hora_evento',
@@ -42,5 +44,10 @@ class Cotizacion extends Model
         return $this->belongsToMany(Producto::class, 'cotizacion_producto')
             ->withPivot('cantidad')
             ->withTimestamps();
+    }
+
+    public function cliente(): BelongsTo
+    {
+        return $this->belongsTo(Cliente::class);
     }
 }

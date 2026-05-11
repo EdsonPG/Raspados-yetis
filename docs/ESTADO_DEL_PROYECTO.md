@@ -327,7 +327,9 @@ $costoBase = $producto->calcularCostoProduccion(); // Retorna ej. 17.75
 - [x] ~~**Módulo B — Panel Split-View**: Detalles operativos del evento (ubicación, horario, paquete) en panel lateral con scroll independiente.~~
 - [x] ~~**Módulo B — Trazabilidad de Estados**: Flujo de trabajo Cotizado → Anticipo Pagado → Confirmado → Completado con validación de transiciones.~~
 - [x] ~~**Módulo B — Buscador Rápido y CTA**: Barra de búsqueda por cliente/evento y botón '+ Nuevo Evento' maquetado.~~
-- [ ] **Módulo C — Clientes y Eventos (CRM)**: Registro de clientes, eventos y cotizaciones.
+- [x] **Módulo C — Clientes y Eventos (CRM)**: Registro del directorio de clientes (`Cliente`), vinculación con Eventos y Cotizaciones. CRUD Completo con Frontend en Astro.
+- [x] **Módulo C — Historial de Contrataciones**: Visualización del registro de eventos pasados por cliente dentro de su expediente.
+- [x] **Módulo C — Sistema de Recordatorios**: Lógica automatizada (`artisan crm:recordatorios`) para alertar sobre eventos próximos o pendientes.
 - [ ] **Módulo D — Gestión de Inventario**: Stock actual, entradas/salidas, alertas de nivel mínimo.
 - [ ] **Módulo E — Seguridad y Auth (Sanctum)**: Proteger endpoints con autenticación.
 - [ ] **Módulo F — Logística**: Rutas de entrega, asignación de personal, calendario.

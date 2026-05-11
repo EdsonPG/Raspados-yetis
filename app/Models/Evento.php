@@ -97,6 +97,7 @@ class Evento extends Model
         'estado',
         'notas',
         'cotizacion_id',
+        'cliente_id',
     ];
 
     /**
@@ -122,7 +123,13 @@ class Evento extends Model
     {
         return $this->belongsTo(Cotizacion::class);
     }
-
+    /**
+     * Cliente asociado al evento
+     */
+    public function cliente(): BelongsTo
+    {
+        return $this->belongsTo(Cliente::class);
+    }
     // ─── Métodos de negocio ──────────────────────────────────────────────
 
     /**

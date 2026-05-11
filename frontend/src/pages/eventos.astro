@@ -287,25 +287,25 @@ function initListeners() {
         b.classList.add('text-texto-500');
       });
       const target = e.currentTarget;
-      target.classList.add('active', 'bg-white', 'text-yeti-700', 'shadow-sm');
-      target.classList.remove('text-texto-500');
-      state.currentTab = target.dataset.tab;
+      (target as HTMLElement).classList.add('active', 'bg-white', 'text-yeti-700', 'shadow-sm');
+      (target as HTMLElement).classList.remove('text-texto-500');
+      state.currentTab = (target as HTMLElement).dataset.tab || 'proximamente';
       renderView();
     });
   });
 
   // Buscador rápido
   const inputBuscar = document.getElementById('input-buscar');
-  inputBuscar.addEventListener('input', (e) => {
-    state.searchQuery = e.target.value.toLowerCase().trim();
+  inputBuscar?.addEventListener('input', (e) => {
+    state.searchQuery = (e.target as HTMLSelectElement)?.value.toLowerCase().trim();
     renderView();
   });
 
-  document.getElementById('btn-cerrar-panel').addEventListener('click', cerrarPanel);
+  document.getElementById('btn-cerrar-panel')?.addEventListener('click', cerrarPanel);
 
   document.querySelectorAll('.btn-estado').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-      await cambiarEstadoEvento(e.currentTarget.dataset.estado);
+      await cambiarEstadoEvento((e.currentTarget as HTMLElement).dataset.estado || '');
     });
   });
 }
@@ -313,29 +313,29 @@ function initListeners() {
 // ─── API FETCH ───────────────────────────────────────────────────────
 
 async function fetchEventos() {
-  el.loading.classList.remove('hidden');
+  el.loading?.classList.remove('hidden');
   try {
     const res = await fetch('http://127.0.0.1:8001/api/v1/eventos');
     const json = await res.json();
     if (json.exito) {
-      state.events = json.datos.map(ev => ({
+      (state as any).events = (json.datos as any[]).map((ev: any) => ({
         ...ev,
         fecha_evento: normalizarFecha(ev.fecha_evento),
       }));
       renderView();
       if (state.selectedEventId) {
-        const ev = state.events.find(e => e.id === state.selectedEventId);
+        const ev: any = (state as any).events.find((e: any) => e.id === (state as any).selectedEventId);
         if (ev) mostrarDetalles(ev);
       }
     }
   } catch (error) {
     console.error("Error cargando eventos:", error);
   } finally {
-    el.loading.classList.add('hidden');
+    el.loading?.classList.add('hidden');
   }
 }
 
-function normalizarFecha(fecha) {
+function normalizarFecha(fecha: string) {
   if (!fecha) return '';
   if (fecha.includes('T')) return fecha.split('T')[0];
   return fecha.slice(0, 10);
@@ -343,24 +343,24 @@ function normalizarFecha(fecha) {
 
 // ─── FILTRAR POR PESTAÑA ─────────────────────────────────────────────
 
-function getEventosFiltrados(tab) {
+function getEventosFiltrados(tab: string) {
   const hoy = new Date().toISOString().split('T')[0];
 
   if (tab === 'proximamente') {
     return state.events.filter(e =>
-      e.fecha_evento >= hoy && (e.estado === 'Confirmado' || e.estado === 'Anticipo Pagado')
-    ).sort((a, b) => a.fecha_evento.localeCompare(b.fecha_evento) || a.hora_inicio.localeCompare(b.hora_inicio));
+      ((e as any).fecha_evento >= hoy && ((e as any).estado === 'Confirmado' || (e as any).estado === 'Anticipo Pagado'))
+    ).sort((a: any, b: any) => a.fecha_evento.localeCompare(b.fecha_evento) || a.hora_inicio.localeCompare(b.hora_inicio));
   }
 
   if (tab === 'confirmar') {
     return state.events.filter(e =>
-      e.fecha_evento >= hoy && e.estado === 'Cotizado'
-    ).sort((a, b) => a.fecha_evento.localeCompare(b.fecha_evento) || a.hora_inicio.localeCompare(b.hora_inicio));
+      ((e as any).fecha_evento >= hoy && (e as any).estado === 'Cotizado')
+    ).sort((a: any, b: any) => a.fecha_evento.localeCompare(b.fecha_evento) || a.hora_inicio.localeCompare(b.hora_inicio));
   }
 
   if (tab === 'completados') {
-    return state.events.filter(e => e.estado === 'Completado')
-      .sort((a, b) => b.fecha_evento.localeCompare(a.fecha_evento));
+    return state.events.filter((e: any) => e.estado === 'Completado')
+      .sort((a: any, b: any) => b.fecha_evento.localeCompare(a.fecha_evento));
   }
 
   return [];
@@ -368,12 +368,17 @@ function getEventosFiltrados(tab) {
 
 function updateCounts() {
   const hoy = new Date().toISOString().split('T')[0];
-  document.getElementById('count-proximamente').textContent =
-    state.events.filter(e => e.fecha_evento >= hoy && (e.estado === 'Confirmado' || e.estado === 'Anticipo Pagado')).length;
-  document.getElementById('count-confirmar').textContent =
-    state.events.filter(e => e.fecha_evento >= hoy && e.estado === 'Cotizado').length;
-  document.getElementById('count-completados').textContent =
-    state.events.filter(e => e.estado === 'Completado').length;
+  const countProximamente = document.getElementById('count-proximamente');
+  if (countProximamente) countProximamente.textContent = String(
+    state.events.filter((e: any) => ((e as any).fecha_evento >= hoy && ((e as any).estado === 'Confirmado' || (e as any).estado === 'Anticipo Pagado'))).length);
+  
+  const countConfirmar = document.getElementById('count-confirmar');
+  if (countConfirmar) countConfirmar.textContent = String(
+    state.events.filter((e: any) => ((e as any).fecha_evento >= hoy && (e as any).estado === 'Cotizado')).length);
+  
+  const countCompletados = document.getElementById('count-completados');
+  if (countCompletados) countCompletados.textContent = String(
+    state.events.filter((e: any) => e.estado === 'Completado').length);
 }
 
 // ─── RENDER LISTA ────────────────────────────────────────────────────
@@ -385,15 +390,15 @@ function renderView() {
   // Aplicar filtro de búsqueda
   if (state.searchQuery) {
     filtrados = filtrados.filter(ev =>
-      (ev.cliente_nombre || '').toLowerCase().includes(state.searchQuery) ||
-      (ev.paquete_contratado || '').toLowerCase().includes(state.searchQuery) ||
-      (ev.cliente_telefono || '').toLowerCase().includes(state.searchQuery) ||
-      (ev.municipio || '').toLowerCase().includes(state.searchQuery)
+      ((ev as any).cliente_nombre || '').toLowerCase().includes(state.searchQuery) ||
+      ((ev as any).paquete_contratado || '').toLowerCase().includes(state.searchQuery) ||
+      ((ev as any).cliente_telefono || '').toLowerCase().includes(state.searchQuery) ||
+      ((ev as any).municipio || '').toLowerCase().includes(state.searchQuery)
     );
   }
 
   const tabLabels = { proximamente: 'próximos', confirmar: 'por confirmar', completados: 'completados' };
-  el.contador.textContent = `${filtrados.length} evento${filtrados.length !== 1 ? 's' : ''} ${tabLabels[state.currentTab]}`;
+  if(el.contador) el.contador.textContent = `${filtrados.length} evento${filtrados.length !== 1 ? 's' : ''} ${(tabLabels as any)[state.currentTab]}`;
 
   if (filtrados.length === 0) {
     const msgs = {
@@ -401,8 +406,8 @@ function renderView() {
       confirmar: { icon: '✅', title: '¡Todo confirmado!', sub: 'No hay eventos pendientes de confirmación.' },
       completados: { icon: '🎉', title: 'Sin historial aún', sub: 'Los eventos finalizados se mostrarán aquí.' },
     };
-    const m = msgs[state.currentTab];
-    el.lista.innerHTML = `
+    const m = (msgs as any)[state.currentTab];
+    if(el.lista) el.lista.innerHTML = `
       <div class="flex flex-col items-center justify-center py-20 text-texto-400">
         <span class="text-5xl mb-4">${m.icon}</span>
         <p class="text-lg font-semibold text-texto-600 mb-1">${m.title}</p>
@@ -412,10 +417,10 @@ function renderView() {
   }
 
   // Agrupar por fecha
-  const porFecha = {};
+  const porFecha: Record<string, any[]> = {};
   filtrados.forEach(ev => {
-    if (!porFecha[ev.fecha_evento]) porFecha[ev.fecha_evento] = [];
-    porFecha[ev.fecha_evento].push(ev);
+    if (!porFecha[(ev as any).fecha_evento]) porFecha[(ev as any).fecha_evento] = [];
+    porFecha[(ev as any).fecha_evento].push(ev);
   });
 
   let html = '<div class="space-y-5">';
@@ -443,8 +448,8 @@ function renderView() {
         </div>
         <div class="space-y-2 pl-1">`;
 
-    eventos.forEach(ev => {
-      const c = estadosConfig[ev.estado] || estadosConfig['Cotizado'];
+    (eventos as any[]).forEach((ev: any) => {
+      const c = (estadosConfig as any)[ev.estado];
       const isSelected = state.selectedEventId === ev.id;
       const ring = isSelected ? 'ring-2 ring-yeti-500 border-yeti-300' : 'border-superficie-200 hover:border-superficie-300 hover:shadow-md';
 
@@ -453,12 +458,12 @@ function renderView() {
                class="bg-white p-4 rounded-xl shadow-sm border ${ring} flex items-center gap-4 cursor-pointer transition-all group">
             <div class="w-1 h-10 rounded-full ${c.icon} shrink-0"></div>
             <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-texto-900 truncate group-hover:text-yeti-700 transition-colors">${ev.cliente_nombre}</h3>
+              <h3 class="font-semibold text-texto-900 truncate group-hover:text-yeti-700 transition-colors">${(ev as any).cliente_nombre}</h3>
               <p class="text-xs text-texto-500 truncate mt-0.5 flex items-center gap-1.5">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 ${(ev.hora_inicio || '').slice(0,5)} hrs
                 <span class="mx-1 text-superficie-300">·</span>
-                ${ev.paquete_contratado || 'Sin paquete'}
+                ${(ev as any).paquete_contratado || 'Sin paquete'}
               </p>
             </div>
             <span class="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold ${c.bg} ${c.text} border ${c.border}">${ev.estado}</span>
@@ -470,46 +475,46 @@ function renderView() {
   });
 
   html += '</div>';
-  el.lista.innerHTML = html;
+  if(el.lista) el.lista.innerHTML = html;
 }
 
 // ─── PANEL SPLIT-VIEW (Derecha) — SIN CAMBIOS ───────────────────────
 
-window.seleccionarEvento = (id) => {
+(window as any).seleccionarEvento = (id: any) => {
   state.selectedEventId = id;
-  const ev = state.events.find(e => e.id === id);
+  const ev = state.events.find((e: any) => e.id === id);
   if (!ev) return;
   renderView();
   mostrarDetalles(ev);
 };
 
-function mostrarDetalles(ev) {
-  el.panelVacio.style.opacity = '0';
-  el.panelVacio.style.pointerEvents = 'none';
-  el.panelContenido.style.opacity = '1';
-  el.panelContenido.style.pointerEvents = 'auto';
+function mostrarDetalles(ev: any) {
+  if(el.panelVacio) el.panelVacio.style.opacity = '0';
+  if(el.panelVacio) el.panelVacio.style.pointerEvents = 'none';
+  if(el.panelContenido) el.panelContenido.style.opacity = '1';
+  if(el.panelContenido) el.panelContenido.style.pointerEvents = 'auto';
 
-  const c = estadosConfig[ev.estado];
-  document.getElementById('detalle-estado-badge').className = `px-3 py-1 text-xs font-bold rounded-full border ${c.bg} ${c.text} ${c.border}`;
-  document.getElementById('detalle-estado-badge').textContent = ev.estado;
-  document.getElementById('detalle-cliente').textContent = ev.cliente_nombre;
-  document.getElementById('detalle-telefono').textContent = ev.cliente_telefono || 'Sin teléfono';
+  const c = (estadosConfig as any)[ev.estado];
+  (document.getElementById('detalle-estado-badge') as HTMLElement).className = `px-3 py-1 text-xs font-bold rounded-full border ${c.bg} ${c.text} ${c.border}`;
+  (document.getElementById('detalle-estado-badge') as HTMLElement).textContent = ev.estado;
+  (document.getElementById('detalle-cliente') as HTMLElement).textContent = (ev as any).cliente_nombre;
+  (document.getElementById('detalle-telefono') as HTMLElement).textContent = (ev as any).cliente_telefono || 'Sin teléfono';
 
   const dateObj = new Date(ev.fecha_evento + 'T00:00:00');
-  document.getElementById('detalle-fecha').textContent = `${dateObj.getDate()} de ${meses[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
-  document.getElementById('detalle-horas').textContent = `${ev.hora_inicio.slice(0,5)} — ${ev.hora_fin ? ev.hora_fin.slice(0,5) : 'Por definir'}`;
+  (document.getElementById('detalle-fecha') as HTMLElement).textContent = `${dateObj.getDate()} de ${meses[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+  (document.getElementById('detalle-horas') as HTMLElement).textContent = `${ev.hora_inicio.slice(0,5)} — ${ev.hora_fin ? ev.hora_fin.slice(0,5) : 'Por definir'}`;
 
-  document.getElementById('detalle-direccion').textContent = `${ev.calle_numero}, ${ev.colonia}, ${ev.municipio}`;
-  document.getElementById('detalle-lugar').textContent = ev.descripcion_lugar || 'Sin descripción adicional';
-  document.getElementById('detalle-paquete').textContent = ev.paquete_contratado;
-  document.getElementById('detalle-invitados').textContent = ev.total_invitados;
-  document.getElementById('detalle-precio').textContent = `$${parseFloat(ev.total_precio).toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+  (document.getElementById('detalle-direccion') as HTMLElement).textContent = `${ev.calle_numero}, ${ev.colonia}, ${(ev as any).municipio}`;
+  (document.getElementById('detalle-lugar') as HTMLElement).textContent = ev.descripcion_lugar || 'Sin descripción adicional';
+  (document.getElementById('detalle-paquete') as HTMLElement).textContent = (ev as any).paquete_contratado;
+  (document.getElementById('detalle-invitados') as HTMLElement).textContent = ev.total_invitados;
+  (document.getElementById('detalle-precio') as HTMLElement).textContent = `$${parseFloat(ev.total_precio).toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
 
   if (ev.notas) {
-    document.getElementById('contenedor-notas').classList.remove('hidden');
-    document.getElementById('detalle-notas').textContent = ev.notas;
+    (document.getElementById('contenedor-notas') as HTMLElement).classList.remove('hidden');
+    (document.getElementById('detalle-notas') as HTMLElement).textContent = ev.notas;
   } else {
-    document.getElementById('contenedor-notas').classList.add('hidden');
+    (document.getElementById('contenedor-notas') as HTMLElement).classList.add('hidden');
   }
 
   actualizarBotonesEstado(ev.estado);
@@ -518,49 +523,49 @@ function mostrarDetalles(ev) {
 function cerrarPanel() {
   state.selectedEventId = null;
   renderView();
-  el.panelVacio.style.opacity = '1';
-  el.panelVacio.style.pointerEvents = 'auto';
-  el.panelContenido.style.opacity = '0';
-  el.panelContenido.style.pointerEvents = 'none';
+  if(el.panelVacio) el.panelVacio.style.opacity = '1';
+  if(el.panelVacio) el.panelVacio.style.pointerEvents = 'auto';
+  if(el.panelContenido) el.panelContenido.style.opacity = '0';
+  if(el.panelContenido) el.panelContenido.style.pointerEvents = 'none';
 }
 
 // ─── TRAZABILIDAD (Cambio de estado) ──────────────────────────────────
 
-function actualizarBotonesEstado(estadoActual) {
+function actualizarBotonesEstado(estadoActual: string) {
   const flujo = ['Cotizado', 'Anticipo Pagado', 'Confirmado', 'Completado'];
   const indexActual = flujo.indexOf(estadoActual);
 
   document.querySelectorAll('.btn-estado').forEach(btn => {
-    const indexBtn = flujo.indexOf(btn.dataset.estado);
+    const indexBtn = flujo.indexOf((btn as HTMLElement).dataset.estado || '');
     btn.classList.remove('border-superficie-200', 'border-yeti-500', 'bg-superficie-50', 'bg-white', 'opacity-50', 'cursor-not-allowed', 'shadow-sm');
     const indicator = btn.querySelector('.indicator');
     const dot = btn.querySelector('.dot');
     const titulo = btn.querySelector('.titulo-estado');
-    indicator.className = 'w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 indicator transition-colors';
-    dot.className = 'w-2.5 h-2.5 rounded-full dot transition-colors';
+    if(indicator) indicator.className = 'w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 indicator transition-colors';
+    if(dot) dot.className = 'w-2.5 h-2.5 rounded-full dot transition-colors';
 
     if (indexBtn < indexActual) {
       btn.classList.add('bg-superficie-50', 'border-superficie-200');
-      indicator.classList.add('border-ganancia-500', 'bg-ganancia-50');
-      dot.classList.add('bg-ganancia-500');
-      titulo.classList.replace('text-texto-700', 'text-texto-500');
+      indicator?.classList.add('border-ganancia-500', 'bg-ganancia-50');
+      dot?.classList.add('bg-ganancia-500');
+      titulo?.classList.replace('text-texto-700', 'text-texto-500');
     } else if (indexBtn === indexActual) {
       btn.classList.add('bg-white', 'border-yeti-500', 'shadow-sm');
-      indicator.classList.add('border-yeti-500', 'bg-yeti-50');
-      dot.classList.add('bg-yeti-500');
-      titulo.classList.replace('text-texto-500', 'text-texto-900');
+      indicator?.classList.add('border-yeti-500', 'bg-yeti-50');
+      dot?.classList.add('bg-yeti-500');
+      titulo?.classList.replace('text-texto-500', 'text-texto-900');
     } else {
       btn.classList.add('bg-white', 'border-superficie-200');
-      indicator.classList.add('border-superficie-300');
-      dot.classList.add('bg-superficie-200');
+      indicator?.classList.add('border-superficie-300');
+      dot?.classList.add('bg-superficie-200');
       if (indexBtn !== indexActual + 1) btn.classList.add('opacity-50', 'cursor-not-allowed');
     }
   });
 }
 
-async function cambiarEstadoEvento(nuevoEstado) {
+async function cambiarEstadoEvento(nuevoEstado: string) {
   if (!state.selectedEventId) return;
-  const ev = state.events.find(e => e.id === state.selectedEventId);
+  const ev: any = (state as any).events.find((e: any) => e.id === (state as any).selectedEventId);
   const flujo = ['Cotizado', 'Anticipo Pagado', 'Confirmado', 'Completado'];
   const indexActual = flujo.indexOf(ev.estado);
   const indexNuevo = flujo.indexOf(nuevoEstado);
@@ -572,7 +577,7 @@ async function cambiarEstadoEvento(nuevoEstado) {
   }
 
   try {
-    el.loading.classList.remove('hidden');
+    el.loading?.classList.remove('hidden');
     const res = await fetch(`http://127.0.0.1:8001/api/v1/eventos/${ev.id}/estado`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -595,9 +600,17 @@ async function cambiarEstadoEvento(nuevoEstado) {
     console.error(error);
     alert('Error de conexión.');
   } finally {
-    el.loading.classList.add('hidden');
+    el.loading?.classList.add('hidden');
   }
 }
 
 </script>
+
+
+
+
+
+
+
+
 
