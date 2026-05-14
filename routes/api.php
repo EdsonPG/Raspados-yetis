@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\ProductoController;
 use App\Http\Controllers\Api\V1\CotizacionController;
 use App\Http\Controllers\Api\V1\EventoController;
 use App\Http\Controllers\Api\V1\ClienteController;
+use App\Http\Controllers\Api\V1\NotificacionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -98,4 +99,10 @@ Route::prefix('v1')->group(function () {
     Route::patch('eventos/{id}/estado', [EventoController::class, 'cambiarEstado'])
          ->name('eventos.cambiar-estado');
     // ──────────────── Módulo C: CRM (Clientes y Eventos) ──────────────────────
-    Route::apiResource('clientes', ClienteController::class);});
+    Route::apiResource('clientes', ClienteController::class);
+
+    // ── Notificaciones del sistema ──────────────────────────────────────
+    Route::get('notificaciones', [NotificacionController::class, 'index'])->name('notificaciones.index');
+    Route::patch('notificaciones/{id}/leer', [NotificacionController::class, 'marcarLeida'])->name('notificaciones.leer');
+    Route::patch('notificaciones/leer-todas', [NotificacionController::class, 'marcarTodas'])->name('notificaciones.leer-todas');
+});

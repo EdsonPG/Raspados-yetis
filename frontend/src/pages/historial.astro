@@ -62,7 +62,7 @@ import Layout from '../layouts/Layout.astro';
   }
 
   function formatearFecha(fecha: string) {
-    if (!fecha) return '—';
+    if (!fecha) return 'ï¿½';
     const fechaObj = new Date(fecha);
     if (Number.isNaN(fechaObj.getTime())) return fecha;
     return fechaObj.toLocaleDateString('es-MX', { dateStyle: 'medium' });
@@ -104,7 +104,7 @@ import Layout from '../layouts/Layout.astro';
             <button data-action="aprobar" data-id="${c.id}" title="Aprobar y Enviar a Agenda" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-ganancia-50 text-ganancia-600 hover:bg-ganancia-100 border border-ganancia-200 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
             </button>
-            <button data-action="cancelar" data-id="${c.id}" title="Cancelar cotización" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors">
+            <button data-action="cancelar" data-id="${c.id}" title="Cancelar cotizaciï¿½n" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           ` : ''}
@@ -174,13 +174,13 @@ import Layout from '../layouts/Layout.astro';
       const id = parseInt(btnAprobar.dataset.id || '0', 10);
       if (id) {
         const result = await (window as any).Swal.fire({
-          title: '¿Aprobar Cotización?',
-          text: 'Se creará el evento en la Agenda y un perfil de cliente en el CRM automáticamente.',
+          title: 'Â¿Aprobar cotizaciÃ³n?',
+          text: 'Se crearÃ¡ el evento en la Agenda y un perfil de cliente en el CRM automÃ¡ticamente.',
           icon: 'question',
           showCancelButton: true,
           confirmButtonColor: '#059669',
           cancelButtonColor: '#94a3b8',
-          confirmButtonText: 'Sí, aprobar y agendar',
+          confirmButtonText: 'SÃ­, aprobar y agendar',
           cancelButtonText: 'No, regresar'
         });
 
@@ -191,8 +191,8 @@ import Layout from '../layouts/Layout.astro';
             const data: any = await res.json();
             if (data.exito) {
               (window as any).Swal.fire({
-                title: '¡Cotización Aprobada!',
-                text: 'Evento y Cliente creados exitosamente en sus respectivos módulos.',
+                title: 'Â¡CotizaciÃ³n aprobada!',
+                text: 'Evento y cliente creados exitosamente en sus respectivos mÃ³dulos.',
                 icon: 'success',
                 confirmButtonColor: '#059669'
               });
@@ -201,7 +201,7 @@ import Layout from '../layouts/Layout.astro';
               (window as any).Swal.fire('Error', data.mensaje, 'error');
             }
           } catch(err) {
-            (window as any).Swal.fire('Error de conexión', 'No se pudo contactar con el servidor.', 'error');
+            (window as any).Swal.fire('Error de conexiï¿½n', 'No se pudo contactar con el servidor.', 'error');
           } finally {
             btnAprobar.disabled = false;
           }
@@ -214,13 +214,13 @@ import Layout from '../layouts/Layout.astro';
       const id = parseInt(btnCancelar.dataset.id || '0', 10);
       if (id) {
         const result = await (window as any).Swal.fire({
-          title: '¿Descartar cotización?',
-          text: 'Pasará a estado Cancelado y no podrá proceder a la Agenda.',
+          title: 'Â¿Descartar cotizaciÃ³n?',
+          text: 'PasarÃ¡ a estado Cancelado y no podrÃ¡ proceder a la Agenda.',
           icon: 'warning',
           showCancelButton: true,
           confirmButtonColor: '#dc2626',
           cancelButtonColor: '#94a3b8',
-          confirmButtonText: 'Sí, descartar',
+          confirmButtonText: 'SÃ­, descartar',
           cancelButtonText: 'Regresar'
         });
 
@@ -232,7 +232,7 @@ import Layout from '../layouts/Layout.astro';
             if (data.exito) {
               (window as any).Swal.fire({
                 title: 'Cancelada',
-                text: 'La cotización fue marcada como rechazada.',
+                text: 'La cotizaciÃ³n fue marcada como rechazada.',
                 icon: 'success',
                 timer: 1500,
                 showConfirmButton: false
@@ -242,7 +242,7 @@ import Layout from '../layouts/Layout.astro';
               (window as any).Swal.fire('Error', data.mensaje, 'error');
             }
           } catch(err) {
-            (window as any).Swal.fire('Error de conexión', 'No se pudo contactar con el servidor.', 'error');
+            (window as any).Swal.fire('Error de conexiï¿½n', 'No se pudo contactar con el servidor.', 'error');
           } finally {
             btnCancelar.disabled = false;
           }

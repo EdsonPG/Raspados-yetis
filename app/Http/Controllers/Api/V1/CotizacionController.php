@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Cotizacion;
 use App\Models\Producto;
+use App\Services\NotificacionService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,10 @@ use Illuminate\Validation\ValidationException;
  */
 class CotizacionController extends Controller
 {
+    public function __construct(private readonly NotificacionService $notificacionService)
+    {
+    }
+
     public function cancelar($id): JsonResponse
     {
         $cotizacion = Cotizacion::find($id);
@@ -29,6 +34,8 @@ class CotizacionController extends Controller
 
         $cotizacion->estado = 'Cancelado';
         $cotizacion->save();
+
+        $this->notificacionService->cotizacionCancelada($cotizacion);
 
         return response()->json([
             'exito' => true,
@@ -71,6 +78,8 @@ class CotizacionController extends Controller
             'cotizacion_id' => $cotizacion->id,
             'notas' => 'Evento generado automáticamente mediante la aprobación de la Cotización #' . $cotizacion->id
         ]);
+
+        $this->notificacionService->cotizacionAprobada($cotizacion, $evento);
 
         // 3. Cambiar estado
         $cotizacion->estado = 'Confirmado';

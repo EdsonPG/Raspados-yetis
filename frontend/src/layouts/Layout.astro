@@ -201,14 +201,28 @@ const rutaActual = Astro.url.pathname;
           </div>
 
           <!-- Campana de Notificaciones -->
-          <div class="relative cursor-pointer group" onclick="Swal.fire({title: 'Notificaciones', text: 'Aquí verás los recordatorios y eventos.', icon: 'info', confirmButtonColor: '#059669'})">
-            <div class="p-2 rounded-full bg-superficie-100 group-hover:bg-superficie-200 transition-colors">
+          <div class="relative" id="notifications-root">
+            <button type="button" id="notifications-button" class="relative cursor-pointer group">
+              <div class="p-2 rounded-full bg-superficie-100 group-hover:bg-superficie-200 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-texto-500 group-hover:text-yeti-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
+              </div>
+              <!-- Badge de Notificación -->
+              <span id="notifications-badge" class="hidden absolute top-1 right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 border-2 border-white text-[10px] leading-4 text-white font-semibold"></span>
+            </button>
+
+            <div id="notifications-panel" class="hidden absolute right-0 mt-3 w-96 max-w-[90vw] rounded-2xl border border-superficie-200 bg-white shadow-xl overflow-hidden z-50">
+              <div class="flex items-center justify-between px-4 py-3 border-b border-superficie-200 bg-superficie-50">
+                <div>
+                  <p class="text-sm font-semibold text-texto-900">Notificaciones</p>
+                  <p class="text-xs text-texto-500" id="notifications-subtitle">Cargando...</p>
+                </div>
+                <button type="button" id="notifications-mark-all" class="text-xs font-medium text-yeti-600 hover:text-yeti-700">Marcar todas</button>
+              </div>
+              <div id="notifications-list" class="max-h-96 overflow-y-auto divide-y divide-superficie-100"></div>
+              <div id="notifications-empty" class="hidden px-4 py-8 text-center text-sm text-texto-500">No hay notificaciones por ahora.</div>
             </div>
-            <!-- Badge de Notificación rojo -->
-            <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
           </div>
         </div>
       </header>
@@ -223,11 +237,13 @@ const rutaActual = Astro.url.pathname;
 
   <!-- Script: Verificar estado de la API al cargar -->
   <script>
+    const API_BASE = 'http://127.0.0.1:8001/api/v1';
+
     async function verificarAPI() {
       const dot = document.getElementById('api-dot');
       const label = document.getElementById('api-label');
       try {
-        const res = await fetch('http://127.0.0.1:8001/api/v1/insumos', {
+        const res = await fetch(`${API_BASE}/insumos`, {
           signal: AbortSignal.timeout(3000)
         });
         if (res.ok) {
@@ -243,7 +259,140 @@ const rutaActual = Astro.url.pathname;
         if (label) label.textContent = 'API no disponible';
       }
     }
+
+    const state = {
+      items: [],
+      open: false,
+    };
+
+    const notificationsRoot = document.getElementById('notifications-root');
+    const notificationsButton = document.getElementById('notifications-button');
+    const notificationsPanel = document.getElementById('notifications-panel');
+    const notificationsList = document.getElementById('notifications-list');
+    const notificationsEmpty = document.getElementById('notifications-empty');
+    const notificationsBadge = document.getElementById('notifications-badge');
+    const notificationsSubtitle = document.getElementById('notifications-subtitle');
+    const notificationsMarkAll = document.getElementById('notifications-mark-all');
+
+    function escapeHtml(text) {
+      return text
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function formatearFecha(valor) {
+      if (!valor) return '';
+      const fecha = new Date(valor);
+      return new Intl.DateTimeFormat('es-MX', {
+        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+      }).format(fecha);
+    }
+
+    function renderNotifications() {
+      const unreadCount = state.items.filter((n) => !n.leida_at).length;
+      if (notificationsBadge) {
+        if (unreadCount > 0) {
+          notificationsBadge.textContent = String(unreadCount);
+          notificationsBadge.classList.remove('hidden');
+        } else {
+          notificationsBadge.classList.add('hidden');
+        }
+      }
+
+      if (notificationsSubtitle) {
+        notificationsSubtitle.textContent = unreadCount > 0
+          ? `${unreadCount} sin leer`
+          : 'Todo al día';
+      }
+
+      if (!notificationsList || !notificationsEmpty) return;
+
+      if (!state.items.length) {
+        notificationsList.innerHTML = '';
+        notificationsEmpty.classList.remove('hidden');
+        return;
+      }
+
+      notificationsEmpty.classList.add('hidden');
+      notificationsList.innerHTML = state.items.map((notificacion) => {
+        const esLeida = Boolean(notificacion.leida_at);
+        const punto = esLeida ? 'bg-superficie-300' : 'bg-yeti-500';
+        const fondo = esLeida ? 'bg-white' : 'bg-yeti-50/50';
+        const accion = notificacion.accion_url || '#';
+        return `
+          <button type="button" data-id="${notificacion.id}" data-accion="${escapeHtml(accion)}" class="w-full text-left px-4 py-3 ${fondo} hover:bg-superficie-50 transition-colors">
+            <div class="flex gap-3">
+              <span class="mt-2 w-2.5 h-2.5 rounded-full ${punto} shrink-0"></span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start justify-between gap-3">
+                  <p class="text-sm font-semibold text-texto-900 truncate">${escapeHtml(notificacion.titulo)}</p>
+                  <span class="text-[11px] text-texto-400 whitespace-nowrap">${formatearFecha(notificacion.created_at)}</span>
+                </div>
+                <p class="mt-1 text-sm text-texto-600 leading-5">${escapeHtml(notificacion.mensaje)}</p>
+              </div>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    async function cargarNotificaciones() {
+      try {
+        const res = await fetch(`${API_BASE}/notificaciones?limit=8`);
+        const json = await res.json();
+        state.items = json?.datos?.notificaciones || [];
+        renderNotifications();
+      } catch {
+        state.items = [];
+        renderNotifications();
+      }
+    }
+
+    function setPanelVisible(visible) {
+      state.open = visible;
+      notificationsPanel?.classList.toggle('hidden', !visible);
+    }
+
+    notificationsButton?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      setPanelVisible(!state.open);
+      if (state.open) cargarNotificaciones();
+    });
+
+    notificationsMarkAll?.addEventListener('click', async () => {
+      await fetch(`${API_BASE}/notificaciones/leer-todas`, { method: 'PATCH' });
+      await cargarNotificaciones();
+    });
+
+    notificationsList?.addEventListener('click', async (event) => {
+      const target = event.target;
+      const button = target instanceof Element ? target.closest('button[data-id]') : null;
+      if (!button) return;
+
+      const id = button.dataset.id;
+      const accion = button.dataset.accion || '#';
+      await fetch(`${API_BASE}/notificaciones/${id}/leer`, { method: 'PATCH' });
+      await cargarNotificaciones();
+
+      if (accion && accion !== '#') {
+        window.location.href = accion;
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!state.open) return;
+      const target = event.target;
+      if (notificationsRoot && target instanceof Node && !notificationsRoot.contains(target)) {
+        setPanelVisible(false);
+      }
+    });
+
     verificarAPI();
+    cargarNotificaciones();
+    setInterval(cargarNotificaciones, 30000);
   </script>
 </body>
 </html>

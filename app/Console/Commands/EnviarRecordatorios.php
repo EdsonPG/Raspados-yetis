@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\Evento;
+use App\Services\NotificacionService;
 
 class EnviarRecordatorios extends Command
 {
@@ -24,7 +25,7 @@ class EnviarRecordatorios extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(NotificacionService $notificacionService)
     {
         $this->info('Iniciando sistema de recordatorios (Módulo C)...');
 
@@ -41,6 +42,7 @@ class EnviarRecordatorios extends Command
         foreach ($eventosProximos as $evento) {
             // Simulamos el envío de WhatsApp / Email
             $this->line("Notificando al cliente: {$evento->cliente_nombre} (Tel: {$evento->cliente_telefono}) para el evento del {$evento->fecha_evento}.");
+            $notificacionService->recordatorioEvento($evento);
         }
 
         $this->info('Recordatorios enviados con éxito.');
