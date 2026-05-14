@@ -49,10 +49,10 @@ import Layout from '../layouts/Layout.astro';
 
 <script>
   const API_BASE = 'http://127.0.0.1:8001/api/v1';
-  let cotizaciones = [];
+  let cotizaciones: any[] = [];
 
-  function badgeEstado(estado) {
-    const mapa = {
+  function badgeEstado(estado: string) {
+    const mapa: Record<string, string> = {
       Pendiente: 'bg-yeti-50 text-yeti-700 border-yeti-200',
       Confirmado: 'bg-ganancia-50 text-ganancia-700 border-ganancia-200',
       Cancelado: 'bg-red-50 text-red-700 border-red-200',
@@ -61,8 +61,8 @@ import Layout from '../layouts/Layout.astro';
     return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${clase}">${estado}</span>`;
   }
 
-  function formatearFecha(fecha) {
-    if (!fecha) return '—';
+  function formatearFecha(fecha: string) {
+    if (!fecha) return '�';
     const fechaObj = new Date(fecha);
     if (Number.isNaN(fechaObj.getTime())) return fecha;
     return fechaObj.toLocaleDateString('es-MX', { dateStyle: 'medium' });
@@ -99,9 +99,17 @@ import Layout from '../layouts/Layout.astro';
           <span class="text-sm font-semibold text-texto-900">$${parseFloat(c.total_precio).toFixed(2)}</span>
         </td>
         <td class="px-6 py-4 text-center">${badgeEstado(c.estado)}</td>
-        <td class="px-6 py-4 text-center">
+        <td class="px-6 py-4 flex justify-center gap-2">
+          ${c.estado === 'Pendiente' ? `
+            <button data-action="aprobar" data-id="${c.id}" title="Aprobar y Enviar a Agenda" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-ganancia-50 text-ganancia-600 hover:bg-ganancia-100 border border-ganancia-200 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+            </button>
+            <button data-action="cancelar" data-id="${c.id}" title="Cancelar cotizaci�n" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          ` : ''}
           <button data-action="pdf" data-id="${c.id}"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-yeti-50 text-yeti-600 hover:bg-yeti-100 border border-yeti-200">
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-yeti-50 text-yeti-600 hover:bg-yeti-100 border border-yeti-200 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0 0l-2 2m2-2l2 2M6 20h12a2 2 0 002-2v-7a2 2 0 00-2-2h-2.5a1.5 1.5 0 01-1.5-1.5V5a2 2 0 00-2-2H6a2 2 0 00-2 2v13a2 2 0 002 2z" />
             </svg>
@@ -114,7 +122,7 @@ import Layout from '../layouts/Layout.astro';
   async function cargarCotizaciones() {
     try {
       const res = await fetch(`${API_BASE}/cotizaciones`);
-      const json = await res.json();
+      const json: any = await res.json();
       if (json.exito) {
         cotizaciones = json.datos || [];
       }
@@ -132,7 +140,7 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
-  async function descargarPdf(id) {
+  async function descargarPdf(id: number) {
     try {
       const res = await fetch(`${API_BASE}/cotizaciones/${id}/pdf`);
       if (!res.ok) throw new Error('No se pudo descargar el PDF');
@@ -150,12 +158,100 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
-  document.getElementById('tbody-historial')?.addEventListener('click', (e) => {
-    const btn = (e.target).closest('button[data-action="pdf"]');
-    if (!btn) return;
-    const id = parseInt(btn.dataset.id || '0', 10);
-    if (id) descargarPdf(id);
+  document.getElementById('tbody-historial')?.addEventListener('click', async (e) => {
+    const target = e.target as Element;
+    const btnPdf = target?.closest('button[data-action="pdf"]') as HTMLButtonElement | null;
+    const btnAprobar = target?.closest('button[data-action="aprobar"]') as HTMLButtonElement | null;
+    const btnCancelar = target?.closest('button[data-action="cancelar"]') as HTMLButtonElement | null;
+
+    if (btnPdf) {
+      const id = parseInt(btnPdf.dataset.id || '0', 10);
+      if (id) descargarPdf(id);
+      return;
+    }
+
+    if (btnAprobar) {
+      const id = parseInt(btnAprobar.dataset.id || '0', 10);
+      if (id) {
+        const result = await (window as any).Swal.fire({
+          title: '¿Aprobar cotización?',
+          text: 'Se creará el evento en la Agenda y un perfil de cliente en el CRM automáticamente.',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#059669',
+          cancelButtonColor: '#94a3b8',
+          confirmButtonText: 'Sí, aprobar y agendar',
+          cancelButtonText: 'No, regresar'
+        });
+
+        if (result.isConfirmed) {
+          try {
+            btnAprobar.disabled = true;
+            const res = await fetch(`${API_BASE}/cotizaciones/${id}/aprobar`, { method: 'POST' });
+            const data: any = await res.json();
+            if (data.exito) {
+              (window as any).Swal.fire({
+                title: '¡Cotización aprobada!',
+                text: 'Evento y cliente creados exitosamente en sus respectivos módulos.',
+                icon: 'success',
+                confirmButtonColor: '#059669'
+              });
+              cargarCotizaciones();
+            } else {
+              (window as any).Swal.fire('Error', data.mensaje, 'error');
+            }
+          } catch(err) {
+            (window as any).Swal.fire('Error de conexi�n', 'No se pudo contactar con el servidor.', 'error');
+          } finally {
+            btnAprobar.disabled = false;
+          }
+        }
+      }
+      return;
+    }
+
+    if (btnCancelar) {
+      const id = parseInt(btnCancelar.dataset.id || '0', 10);
+      if (id) {
+        const result = await (window as any).Swal.fire({
+          title: '¿Descartar cotización?',
+          text: 'Pasará a estado Cancelado y no podrá proceder a la Agenda.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#94a3b8',
+          confirmButtonText: 'Sí, descartar',
+          cancelButtonText: 'Regresar'
+        });
+
+        if (result.isConfirmed) {
+          try {
+            btnCancelar.disabled = true;
+            const res = await fetch(`${API_BASE}/cotizaciones/${id}/cancelar`, { method: 'POST' });
+            const data: any = await res.json();
+            if (data.exito) {
+              (window as any).Swal.fire({
+                title: 'Cancelada',
+                text: 'La cotización fue marcada como rechazada.',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+              });
+              cargarCotizaciones();
+            } else {
+              (window as any).Swal.fire('Error', data.mensaje, 'error');
+            }
+          } catch(err) {
+            (window as any).Swal.fire('Error de conexi�n', 'No se pudo contactar con el servidor.', 'error');
+          } finally {
+            btnCancelar.disabled = false;
+          }
+        }
+      }
+      return;
+    }
   });
 
   cargarCotizaciones();
 </script>
+

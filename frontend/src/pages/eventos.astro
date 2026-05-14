@@ -1,0 +1,616 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout titulo="Agenda Centralizada" descripcion="Gestión de eventos y calendario logístico">
+  
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-8rem)]">
+    
+    <!-- ═══════════════ LISTA DE TAREAS (Izquierda) ═══════════════ -->
+    <div class="lg:col-span-2 bg-white rounded-2xl shadow-panel border border-superficie-200 flex flex-col overflow-hidden relative">
+      
+      <!-- Header con título y contador -->
+      <div class="shrink-0 px-6 py-4 border-b border-superficie-200 bg-superficie-50">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-yeti-100 border border-yeti-200 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yeti-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-texto-900">Agenda de Eventos</h2>
+              <p id="lista-contador" class="text-xs text-texto-500">Cargando...</p>
+            </div>
+          </div>
+          <button id="btn-nuevo-evento" class="flex items-center gap-2 px-4 py-2.5 bg-yeti-600 hover:bg-yeti-700 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Nuevo Evento
+          </button>
+        </div>
+
+        <!-- Buscador Rápido -->
+        <div class="relative mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-texto-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
+          <input id="input-buscar" type="text" placeholder="Buscar cliente o evento..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-superficie-200 rounded-xl text-sm text-texto-900 placeholder:text-texto-400 focus:outline-none focus:ring-2 focus:ring-yeti-300 focus:border-yeti-400 transition-all" />
+        </div>
+
+        <!-- Pestañas -->
+        <div class="flex gap-1 p-1 bg-superficie-200 rounded-xl">
+          <button class="tab-btn active flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-white text-yeti-700 shadow-sm transition-all" data-tab="proximamente">
+            <span class="flex items-center justify-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Próximamente
+              <span id="count-proximamente" class="ml-1 text-[10px] bg-yeti-100 text-yeti-700 px-1.5 py-0.5 rounded-full font-bold">0</span>
+            </span>
+          </button>
+          <button class="tab-btn flex-1 px-4 py-2 text-sm font-semibold rounded-lg text-texto-500 hover:text-texto-900 transition-all" data-tab="confirmar">
+            <span class="flex items-center justify-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Por Confirmar
+              <span id="count-confirmar" class="ml-1 text-[10px] bg-costo-100 text-costo-700 px-1.5 py-0.5 rounded-full font-bold">0</span>
+            </span>
+          </button>
+          <button class="tab-btn flex-1 px-4 py-2 text-sm font-semibold rounded-lg text-texto-500 hover:text-texto-900 transition-all" data-tab="completados">
+            <span class="flex items-center justify-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Completados
+              <span id="count-completados" class="ml-1 text-[10px] bg-ganancia-100 text-ganancia-700 px-1.5 py-0.5 rounded-full font-bold">0</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista de tarjetas (scrollable) -->
+      <div id="lista-container" class="flex-1 overflow-y-auto p-4 bg-superficie-50">
+        <div id="lista-eventos"></div>
+      </div>
+
+      <!-- Loading overlay -->
+      <div id="calendar-loading" class="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center hidden">
+        <div class="animate-spin rounded-full h-10 w-10 border-4 border-yeti-200 border-t-yeti-600"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ PANEL DE DETALLES (Derecha) ═══════════════ -->
+    <div class="bg-white rounded-2xl shadow-panel border border-superficie-200 flex flex-col overflow-hidden relative">
+      
+      <!-- Estado Vacío (cuando no hay evento seleccionado) -->
+      <div id="panel-vacio" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center z-10 bg-white transition-opacity duration-300">
+        <div class="w-20 h-20 rounded-full bg-yeti-50 flex items-center justify-center mb-4 border-4 border-white shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-yeti-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-texto-900 mb-2">Ningún evento seleccionado</h3>
+        <p class="text-sm text-texto-500">Haz clic en un evento del calendario para ver sus detalles operativos, ubicación y paquete contratado.</p>
+      </div>
+
+      <!-- Contenido del Panel (Oculto inicialmente) -->
+      <div id="panel-contenido" class="flex-1 flex flex-col h-full opacity-0 pointer-events-none transition-opacity duration-300">
+        
+        <!-- Header del Detalles -->
+        <div class="shrink-0 p-5 border-b border-superficie-200 bg-gradient-to-br from-white to-superficie-50">
+          <div class="flex items-start justify-between mb-3">
+            <div id="detalle-estado-badge" class="px-3 py-1 text-xs font-bold rounded-full border">
+              <!-- Etiqueta de estado -->
+            </div>
+            <button id="btn-cerrar-panel" class="text-texto-400 hover:text-texto-900 bg-superficie-100 hover:bg-superficie-200 p-1.5 rounded-full transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <h2 id="detalle-cliente" class="text-lg font-bold text-texto-900 mb-1 break-words">Nombre Cliente</h2>
+          <div class="flex items-center gap-2 text-sm text-texto-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+            <span id="detalle-telefono">Teléfono</span>
+          </div>
+        </div>
+
+        <!-- Cuerpo Desplazable -->
+        <div class="flex-1 overflow-y-auto p-5 space-y-4 bg-white">
+          
+          <!-- Horario -->
+          <div class="shrink-0">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-texto-400 mb-3 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yeti-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Horario
+            </h4>
+            <div class="bg-superficie-50 p-4 rounded-xl border border-superficie-100 flex items-center justify-between">
+              <div>
+                <p id="detalle-fecha" class="font-medium text-texto-900">Fecha</p>
+                <p id="detalle-horas" class="text-sm text-texto-500">00:00 - 00:00</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ubicación -->
+          <div class="shrink-0">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-texto-400 mb-3 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yeti-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Ubicación
+            </h4>
+            <div class="bg-superficie-50 p-4 rounded-xl border border-superficie-100 break-words">
+              <p id="detalle-direccion" class="text-sm text-texto-900 font-medium leading-relaxed mb-2 break-words">Dirección completa</p>
+              <p id="detalle-lugar" class="text-sm text-texto-500 italic leading-relaxed break-words">Descripción del lugar</p>
+            </div>
+          </div>
+
+          <!-- Paquete Contratado -->
+          <div class="shrink-0">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-texto-400 mb-3 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yeti-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              Paquete / Servicio
+            </h4>
+            <div class="bg-yeti-50 p-4 rounded-xl border border-yeti-100 break-words">
+              <p id="detalle-paquete" class="text-sm font-semibold text-yeti-900 mb-2 leading-relaxed break-words">Nombre del Paquete</p>
+              <div class="flex items-center justify-between mt-3 pt-3 border-t border-yeti-200/50">
+                <div class="text-center">
+                  <p class="text-[10px] uppercase font-bold text-yeti-600 mb-0.5">Invitados</p>
+                  <p id="detalle-invitados" class="text-lg font-bold text-yeti-900">0</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-[10px] uppercase font-bold text-yeti-600 mb-0.5">Total</p>
+                  <p id="detalle-precio" class="text-lg font-bold text-yeti-900">$0.00</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Notas -->
+          <div id="contenedor-notas" class="hidden shrink-0">
+             <h4 class="text-xs font-bold uppercase tracking-wider text-texto-400 mb-3 flex items-center gap-2">
+               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yeti-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+               </svg>
+               Notas
+             </h4>
+             <p id="detalle-notas" class="text-sm text-texto-700 bg-superficie-50 p-4 rounded-xl border border-superficie-200 leading-relaxed break-words"></p>
+          </div>
+
+          <!-- Trazabilidad de Estados (scrollable junto al contenido) -->
+          <div class="shrink-0 pt-4 mt-2 border-t border-superficie-200">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-texto-400 mb-3">Actualizar Estado</h4>
+            
+            <div class="flex flex-col gap-1.5 relative">
+              <!-- Linea conectora de progreso -->
+              <div class="absolute left-[15px] top-4 bottom-4 w-0.5 bg-superficie-200 z-0"></div>
+              
+              <button data-estado="Cotizado" class="btn-estado relative z-10 flex items-center gap-3 p-2.5 rounded-xl border transition-all text-left group hover:border-costo-400">
+                <div class="w-7 h-7 rounded-full border-2 border-superficie-300 bg-white flex items-center justify-center shrink-0 indicator">
+                  <div class="w-2.5 h-2.5 rounded-full bg-superficie-300 dot"></div>
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-texto-700 titulo-estado group-hover:text-costo-600">Cotizado</p>
+                  <p class="text-[11px] text-texto-400">Presupuesto enviado</p>
+                </div>
+              </button>
+              
+              <button data-estado="Anticipo Pagado" class="btn-estado relative z-10 flex items-center gap-3 p-2.5 rounded-xl border transition-all text-left group hover:border-yeti-400">
+                <div class="w-7 h-7 rounded-full border-2 border-superficie-300 bg-white flex items-center justify-center shrink-0 indicator">
+                  <div class="w-2.5 h-2.5 rounded-full bg-superficie-300 dot"></div>
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-texto-700 titulo-estado group-hover:text-yeti-600">Anticipo Pagado</p>
+                  <p class="text-[11px] text-texto-400">Fecha apartada</p>
+                </div>
+              </button>
+
+              <button data-estado="Confirmado" class="btn-estado relative z-10 flex items-center gap-3 p-2.5 rounded-xl border transition-all text-left group hover:border-frost-400">
+                <div class="w-7 h-7 rounded-full border-2 border-superficie-300 bg-white flex items-center justify-center shrink-0 indicator">
+                  <div class="w-2.5 h-2.5 rounded-full bg-superficie-300 dot"></div>
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-texto-700 titulo-estado group-hover:text-frost-600">Confirmado</p>
+                  <p class="text-[11px] text-texto-400">Logística lista</p>
+                </div>
+              </button>
+
+              <button data-estado="Completado" class="btn-estado relative z-10 flex items-center gap-3 p-2.5 rounded-xl border transition-all text-left group hover:border-ganancia-400">
+                <div class="w-7 h-7 rounded-full border-2 border-superficie-300 bg-white flex items-center justify-center shrink-0 indicator">
+                  <div class="w-2.5 h-2.5 rounded-full bg-superficie-300 dot"></div>
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-texto-700 titulo-estado group-hover:text-ganancia-600">Completado</p>
+                  <p class="text-[11px] text-texto-400">Servicio finalizado</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+/**
+ * Lógica de Lista de Tareas por Pestañas + Panel Split-View (Vanilla JS + Astro)
+ */
+
+// Estado global
+const state = {
+  currentTab: 'proximamente',
+  events: [],
+  selectedEventId: null,
+  searchQuery: ''
+};
+
+// Configuración de UI
+const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+const estadosConfig = {
+  'Cotizado': { bg: 'bg-costo-100', text: 'text-costo-800', border: 'border-costo-200', icon: 'bg-costo-500', label: 'Pendiente de pago' },
+  'Anticipo Pagado': { bg: 'bg-yeti-100', text: 'text-yeti-800', border: 'border-yeti-200', icon: 'bg-yeti-500', label: 'Fecha apartada' },
+  'Confirmado': { bg: 'bg-frost-100', text: 'text-frost-800', border: 'border-frost-200', icon: 'bg-frost-500', label: 'Listo para servir' },
+  'Completado': { bg: 'bg-ganancia-100', text: 'text-ganancia-800', border: 'border-ganancia-200', icon: 'bg-ganancia-500', label: 'Finalizado' },
+};
+
+// Elementos del DOM
+const el = {
+  lista: document.getElementById('lista-eventos'),
+  contador: document.getElementById('lista-contador'),
+  loading: document.getElementById('calendar-loading'),
+  panelVacio: document.getElementById('panel-vacio'),
+  panelContenido: document.getElementById('panel-contenido'),
+};
+
+// ─── INIT ────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  initListeners();
+  fetchEventos();
+});
+
+function initListeners() {
+  // Pestañas
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active', 'bg-white', 'text-yeti-700', 'shadow-sm');
+        b.classList.add('text-texto-500');
+      });
+      const target = e.currentTarget;
+      (target as HTMLElement).classList.add('active', 'bg-white', 'text-yeti-700', 'shadow-sm');
+      (target as HTMLElement).classList.remove('text-texto-500');
+      state.currentTab = (target as HTMLElement).dataset.tab || 'proximamente';
+      renderView();
+    });
+  });
+
+  // Buscador rápido
+  const inputBuscar = document.getElementById('input-buscar');
+  inputBuscar?.addEventListener('input', (e) => {
+    state.searchQuery = (e.target as HTMLSelectElement)?.value.toLowerCase().trim();
+    renderView();
+  });
+
+  document.getElementById('btn-cerrar-panel')?.addEventListener('click', cerrarPanel);
+
+  document.querySelectorAll('.btn-estado').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      await cambiarEstadoEvento((e.currentTarget as HTMLElement).dataset.estado || '');
+    });
+  });
+}
+
+// ─── API FETCH ───────────────────────────────────────────────────────
+
+async function fetchEventos() {
+  el.loading?.classList.remove('hidden');
+  try {
+    const res = await fetch('http://127.0.0.1:8001/api/v1/eventos');
+    const json = await res.json();
+    if (json.exito) {
+      (state as any).events = (json.datos as any[]).map((ev: any) => ({
+        ...ev,
+        fecha_evento: normalizarFecha(ev.fecha_evento),
+      }));
+      renderView();
+      if (state.selectedEventId) {
+        const ev: any = (state as any).events.find((e: any) => e.id === (state as any).selectedEventId);
+        if (ev) mostrarDetalles(ev);
+      }
+    }
+  } catch (error) {
+    console.error("Error cargando eventos:", error);
+  } finally {
+    el.loading?.classList.add('hidden');
+  }
+}
+
+function normalizarFecha(fecha: string) {
+  if (!fecha) return '';
+  if (fecha.includes('T')) return fecha.split('T')[0];
+  return fecha.slice(0, 10);
+}
+
+// ─── FILTRAR POR PESTAÑA ─────────────────────────────────────────────
+
+function getEventosFiltrados(tab: string) {
+  const hoy = new Date().toISOString().split('T')[0];
+
+  if (tab === 'proximamente') {
+    return state.events.filter(e =>
+      ((e as any).fecha_evento >= hoy && ((e as any).estado === 'Confirmado' || (e as any).estado === 'Anticipo Pagado'))
+    ).sort((a: any, b: any) => a.fecha_evento.localeCompare(b.fecha_evento) || a.hora_inicio.localeCompare(b.hora_inicio));
+  }
+
+  if (tab === 'confirmar') {
+    return state.events.filter(e =>
+      ((e as any).fecha_evento >= hoy && (e as any).estado === 'Cotizado')
+    ).sort((a: any, b: any) => a.fecha_evento.localeCompare(b.fecha_evento) || a.hora_inicio.localeCompare(b.hora_inicio));
+  }
+
+  if (tab === 'completados') {
+    return state.events.filter((e: any) => e.estado === 'Completado')
+      .sort((a: any, b: any) => b.fecha_evento.localeCompare(a.fecha_evento));
+  }
+
+  return [];
+}
+
+function updateCounts() {
+  const hoy = new Date().toISOString().split('T')[0];
+  const countProximamente = document.getElementById('count-proximamente');
+  if (countProximamente) countProximamente.textContent = String(
+    state.events.filter((e: any) => ((e as any).fecha_evento >= hoy && ((e as any).estado === 'Confirmado' || (e as any).estado === 'Anticipo Pagado'))).length);
+  
+  const countConfirmar = document.getElementById('count-confirmar');
+  if (countConfirmar) countConfirmar.textContent = String(
+    state.events.filter((e: any) => ((e as any).fecha_evento >= hoy && (e as any).estado === 'Cotizado')).length);
+  
+  const countCompletados = document.getElementById('count-completados');
+  if (countCompletados) countCompletados.textContent = String(
+    state.events.filter((e: any) => e.estado === 'Completado').length);
+}
+
+// ─── RENDER LISTA ────────────────────────────────────────────────────
+
+function renderView() {
+  updateCounts();
+  let filtrados = getEventosFiltrados(state.currentTab);
+
+  // Aplicar filtro de búsqueda
+  if (state.searchQuery) {
+    filtrados = filtrados.filter(ev =>
+      ((ev as any).cliente_nombre || '').toLowerCase().includes(state.searchQuery) ||
+      ((ev as any).paquete_contratado || '').toLowerCase().includes(state.searchQuery) ||
+      ((ev as any).cliente_telefono || '').toLowerCase().includes(state.searchQuery) ||
+      ((ev as any).municipio || '').toLowerCase().includes(state.searchQuery)
+    );
+  }
+
+  const tabLabels = { proximamente: 'próximos', confirmar: 'por confirmar', completados: 'completados' };
+  if(el.contador) el.contador.textContent = `${filtrados.length} evento${filtrados.length !== 1 ? 's' : ''} ${(tabLabels as any)[state.currentTab]}`;
+
+  if (filtrados.length === 0) {
+    const msgs = {
+      proximamente: { icon: '📅', title: 'Sin eventos próximos', sub: 'Los eventos confirmados o con anticipo aparecerán aquí.' },
+      confirmar: { icon: '✅', title: '¡Todo confirmado!', sub: 'No hay eventos pendientes de confirmación.' },
+      completados: { icon: '🎉', title: 'Sin historial aún', sub: 'Los eventos finalizados se mostrarán aquí.' },
+    };
+    const m = (msgs as any)[state.currentTab];
+    if(el.lista) el.lista.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-20 text-texto-400">
+        <span class="text-5xl mb-4">${m.icon}</span>
+        <p class="text-lg font-semibold text-texto-600 mb-1">${m.title}</p>
+        <p class="text-sm">${m.sub}</p>
+      </div>`;
+    return;
+  }
+
+  // Agrupar por fecha
+  const porFecha: Record<string, any[]> = {};
+  filtrados.forEach(ev => {
+    if (!porFecha[(ev as any).fecha_evento]) porFecha[(ev as any).fecha_evento] = [];
+    porFecha[(ev as any).fecha_evento].push(ev);
+  });
+
+  let html = '<div class="space-y-5">';
+  const hoyStr = new Date().toISOString().split('T')[0];
+
+  Object.entries(porFecha).forEach(([fecha, eventos]) => {
+    const [anio, mesNum, diaNum] = fecha.split('-');
+    const mesIdx = parseInt(mesNum) - 1;
+    const dia = parseInt(diaNum);
+    const diaSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][new Date(parseInt(anio), mesIdx, dia).getDay()];
+    const esHoy = fecha === hoyStr;
+
+    html += `
+      <div>
+        <div class="flex items-center gap-3 mb-3 px-1">
+          <div class="w-12 h-12 rounded-xl ${esHoy ? 'bg-yeti-500 text-white' : 'bg-white border border-superficie-200'} flex flex-col items-center justify-center shrink-0 shadow-sm">
+            <p class="text-[9px] font-bold uppercase leading-none ${esHoy ? 'text-yeti-100' : 'text-texto-400'}">${meses[mesIdx].slice(0,3)}</p>
+            <p class="text-lg font-black leading-none mt-0.5">${dia}</p>
+          </div>
+          <div>
+            <p class="text-sm font-semibold ${esHoy ? 'text-yeti-700' : 'text-texto-700'}">${esHoy ? 'Hoy' : diaSemana}</p>
+            <p class="text-xs text-texto-400">${dia} de ${meses[mesIdx]} ${anio}</p>
+          </div>
+          <div class="flex-1 h-px bg-superficie-200 ml-2"></div>
+        </div>
+        <div class="space-y-2 pl-1">`;
+
+    (eventos as any[]).forEach((ev: any) => {
+      const c = (estadosConfig as any)[ev.estado];
+      const isSelected = state.selectedEventId === ev.id;
+      const ring = isSelected ? 'ring-2 ring-yeti-500 border-yeti-300' : 'border-superficie-200 hover:border-superficie-300 hover:shadow-md';
+
+      html += `
+          <div onclick="window.seleccionarEvento(${ev.id})"
+               class="bg-white p-4 rounded-xl shadow-sm border ${ring} flex items-center gap-4 cursor-pointer transition-all group">
+            <div class="w-1 h-10 rounded-full ${c.icon} shrink-0"></div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-texto-900 truncate group-hover:text-yeti-700 transition-colors">${(ev as any).cliente_nombre}</h3>
+              <p class="text-xs text-texto-500 truncate mt-0.5 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                ${(ev.hora_inicio || '').slice(0,5)} hrs
+                <span class="mx-1 text-superficie-300">·</span>
+                ${(ev as any).paquete_contratado || 'Sin paquete'}
+              </p>
+            </div>
+            <span class="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold ${c.bg} ${c.text} border ${c.border}">${ev.estado}</span>
+            <svg class="w-4 h-4 text-texto-300 shrink-0 group-hover:text-yeti-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+          </div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  html += '</div>';
+  if(el.lista) el.lista.innerHTML = html;
+}
+
+// ─── PANEL SPLIT-VIEW (Derecha) — SIN CAMBIOS ───────────────────────
+
+(window as any).seleccionarEvento = (id: any) => {
+  state.selectedEventId = id;
+  const ev = state.events.find((e: any) => e.id === id);
+  if (!ev) return;
+  renderView();
+  mostrarDetalles(ev);
+};
+
+function mostrarDetalles(ev: any) {
+  if(el.panelVacio) el.panelVacio.style.opacity = '0';
+  if(el.panelVacio) el.panelVacio.style.pointerEvents = 'none';
+  if(el.panelContenido) el.panelContenido.style.opacity = '1';
+  if(el.panelContenido) el.panelContenido.style.pointerEvents = 'auto';
+
+  const c = (estadosConfig as any)[ev.estado];
+  (document.getElementById('detalle-estado-badge') as HTMLElement).className = `px-3 py-1 text-xs font-bold rounded-full border ${c.bg} ${c.text} ${c.border}`;
+  (document.getElementById('detalle-estado-badge') as HTMLElement).textContent = ev.estado;
+  (document.getElementById('detalle-cliente') as HTMLElement).textContent = (ev as any).cliente_nombre;
+  (document.getElementById('detalle-telefono') as HTMLElement).textContent = (ev as any).cliente_telefono || 'Sin teléfono';
+
+  const dateObj = new Date(ev.fecha_evento + 'T00:00:00');
+  (document.getElementById('detalle-fecha') as HTMLElement).textContent = `${dateObj.getDate()} de ${meses[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+  (document.getElementById('detalle-horas') as HTMLElement).textContent = `${ev.hora_inicio.slice(0,5)} — ${ev.hora_fin ? ev.hora_fin.slice(0,5) : 'Por definir'}`;
+
+  (document.getElementById('detalle-direccion') as HTMLElement).textContent = `${ev.calle_numero}, ${ev.colonia}, ${(ev as any).municipio}`;
+  (document.getElementById('detalle-lugar') as HTMLElement).textContent = ev.descripcion_lugar || 'Sin descripción adicional';
+  (document.getElementById('detalle-paquete') as HTMLElement).textContent = (ev as any).paquete_contratado;
+  (document.getElementById('detalle-invitados') as HTMLElement).textContent = ev.total_invitados;
+  (document.getElementById('detalle-precio') as HTMLElement).textContent = `$${parseFloat(ev.total_precio).toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+
+  if (ev.notas) {
+    (document.getElementById('contenedor-notas') as HTMLElement).classList.remove('hidden');
+    (document.getElementById('detalle-notas') as HTMLElement).textContent = ev.notas;
+  } else {
+    (document.getElementById('contenedor-notas') as HTMLElement).classList.add('hidden');
+  }
+
+  actualizarBotonesEstado(ev.estado);
+}
+
+function cerrarPanel() {
+  state.selectedEventId = null;
+  renderView();
+  if(el.panelVacio) el.panelVacio.style.opacity = '1';
+  if(el.panelVacio) el.panelVacio.style.pointerEvents = 'auto';
+  if(el.panelContenido) el.panelContenido.style.opacity = '0';
+  if(el.panelContenido) el.panelContenido.style.pointerEvents = 'none';
+}
+
+// ─── TRAZABILIDAD (Cambio de estado) ──────────────────────────────────
+
+function actualizarBotonesEstado(estadoActual: string) {
+  const flujo = ['Cotizado', 'Anticipo Pagado', 'Confirmado', 'Completado'];
+  const indexActual = flujo.indexOf(estadoActual);
+
+  document.querySelectorAll('.btn-estado').forEach(btn => {
+    const indexBtn = flujo.indexOf((btn as HTMLElement).dataset.estado || '');
+    btn.classList.remove('border-superficie-200', 'border-yeti-500', 'bg-superficie-50', 'bg-white', 'opacity-50', 'cursor-not-allowed', 'shadow-sm');
+    const indicator = btn.querySelector('.indicator');
+    const dot = btn.querySelector('.dot');
+    const titulo = btn.querySelector('.titulo-estado');
+    if(indicator) indicator.className = 'w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 indicator transition-colors';
+    if(dot) dot.className = 'w-2.5 h-2.5 rounded-full dot transition-colors';
+
+    if (indexBtn < indexActual) {
+      btn.classList.add('bg-superficie-50', 'border-superficie-200');
+      indicator?.classList.add('border-ganancia-500', 'bg-ganancia-50');
+      dot?.classList.add('bg-ganancia-500');
+      titulo?.classList.replace('text-texto-700', 'text-texto-500');
+    } else if (indexBtn === indexActual) {
+      btn.classList.add('bg-white', 'border-yeti-500', 'shadow-sm');
+      indicator?.classList.add('border-yeti-500', 'bg-yeti-50');
+      dot?.classList.add('bg-yeti-500');
+      titulo?.classList.replace('text-texto-500', 'text-texto-900');
+    } else {
+      btn.classList.add('bg-white', 'border-superficie-200');
+      indicator?.classList.add('border-superficie-300');
+      dot?.classList.add('bg-superficie-200');
+      if (indexBtn !== indexActual + 1) btn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+  });
+}
+
+async function cambiarEstadoEvento(nuevoEstado: string) {
+  if (!state.selectedEventId) return;
+  const ev: any = (state as any).events.find((e: any) => e.id === (state as any).selectedEventId);
+  const flujo = ['Cotizado', 'Anticipo Pagado', 'Confirmado', 'Completado'];
+  const indexActual = flujo.indexOf(ev.estado);
+  const indexNuevo = flujo.indexOf(nuevoEstado);
+
+  if (indexNuevo !== indexActual + 1) {
+    if (indexNuevo <= indexActual) return;
+    alert(`No puedes saltar estados. Debes pasar primero por '${flujo[indexActual+1]}'.`);
+    return;
+  }
+
+  try {
+    el.loading?.classList.remove('hidden');
+    const res = await fetch(`http://127.0.0.1:8001/api/v1/eventos/${ev.id}/estado`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ estado: nuevoEstado })
+    });
+    const data = await res.json();
+    if (data.exito) {
+      ev.estado = nuevoEstado;
+      renderView();
+      mostrarDetalles(ev);
+      const btn = document.querySelector(`.btn-estado[data-estado="${nuevoEstado}"]`);
+      if (btn) {
+        btn.classList.add('ring-4', 'ring-ganancia-200');
+        setTimeout(() => btn.classList.remove('ring-4', 'ring-ganancia-200'), 500);
+      }
+    } else {
+      alert(data.mensaje || 'Error al cambiar estado.');
+    }
+  } catch (error) {
+    console.error(error);
+    alert('Error de conexión.');
+  } finally {
+    el.loading?.classList.add('hidden');
+  }
+}
+
+</script>
+
+
+
+
+
+
+
+
+
