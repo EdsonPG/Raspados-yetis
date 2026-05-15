@@ -264,6 +264,42 @@ class EventoController extends Controller
             ], 422);
         }
 
+        // ── Módulo D: Descuento Automatizado e Idempotente de Insumos ──
+        if (in_array($nuevoEstado, [Evento::ESTADO_CONFIRMADO, Evento::ESTADO_COMPLETADO], true) && !$evento->inventario_descontado) {
+            $evento->load('cotizacion.productos.insumos');
+            if ($evento->cotizacion && $evento->cotizacion->productos) {
+                $notificacionService = app(\App\Services\NotificacionService::class);
+                foreach ($evento->cotizacion->productos as $producto) {
+                    $cantidadProducto = (float) $producto->pivot->cantidad;
+                    foreach ($producto->insumos as $insumo) {
+                        $cantidadInsumoReceta = (float) $insumo->pivot->cantidad;
+                        $consumoTotal = $cantidadProducto * $cantidadInsumoReceta;
+
+                        $insumo->stock_actual = (float) $insumo->stock_actual - $consumoTotal;
+                        $insumo->save();
+
+                        // Verificar si cayó por debajo del stock mínimo para generar alerta de reabastecimiento
+                        if ($insumo->stock_actual <= (float) $insumo->stock_minimo) {
+                            $notificacionService->crear(
+                                'alerta_stock',
+                                'Alerta de Reabastecimiento',
+                                "El insumo '{$insumo->nombre}' tiene un stock actual de " . round($insumo->stock_actual, 2) . " {$insumo->unidad_medida}, crítico vs mínimo de " . round($insumo->stock_minimo, 2) . ".",
+                                '/inventario',
+                                [
+                                    'insumo_id' => $insumo->id,
+                                    'nombre' => $insumo->nombre,
+                                    'stock_actual' => $insumo->stock_actual,
+                                    'stock_minimo' => $insumo->stock_minimo,
+                                ]
+                            );
+                        }
+                    }
+                }
+                $evento->inventario_descontado = true;
+                $evento->save();
+            }
+        }
+
         return response()->json([
             'exito'   => true,
             'mensaje' => "Estado del evento cambiado de '{$estadoAnterior}' a '{$nuevoEstado}'.",

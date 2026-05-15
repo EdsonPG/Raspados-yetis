@@ -1,0 +1,493 @@
+---
+/**
+ * Página: Control de Inventario y Logística — Módulo D
+ *
+ * Dashboard logístico con proyecciones inteligentes de stock basadas
+ * en eventos futuros programados. Permite visualizar el impacto en el
+ * inventario y reabastecer insumos de forma ágil y predictiva.
+ *
+ * Consume: GET /api/v1/inventario/proyeccion
+ * Envía:   POST /api/v1/inventario/reabastecer
+ */
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout titulo="Control de Inventario" descripcion="Proyecciones logísticas y reabastecimiento predictivo — Raspados Yeti ERP">
+
+  <!-- Cabecera de la vista -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div>
+      <h3 class="text-2xl font-bold text-texto-900">Control Logístico y Proyecciones</h3>
+      <p class="text-texto-500 mt-1">Monitorea el impacto de eventos futuros en el inventario y anticipa compras</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button id="btn-recargar"
+              class="inline-flex items-center gap-2 px-3 py-2 bg-superficie-100 text-texto-700 text-xs font-semibold rounded-lg hover:bg-superficie-200 transition-colors border border-superficie-200 cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        Actualizar Datos
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TARJETAS DE MÉTRICAS (KPIs) ═══════════════ -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <!-- KPI: Total Insumos -->
+    <div class="bg-white rounded-2xl border border-superficie-200 p-6 shadow-sm relative overflow-hidden">
+      <div class="absolute top-0 right-0 p-6 opacity-5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24 text-texto-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+      </div>
+      <p class="text-xs font-semibold uppercase tracking-wider text-texto-400 mb-1">Total de Insumos Monitoreados</p>
+      <div class="flex items-baseline gap-2">
+        <span id="kpi-total" class="text-3xl font-extrabold text-texto-900">—</span>
+        <span class="text-xs text-texto-400 font-medium">registrados</span>
+      </div>
+      <div class="mt-3 flex items-center gap-1.5 text-xs text-ganancia-600 font-medium">
+        <span class="inline-block w-2 h-2 rounded-full bg-ganancia-500"></span>
+        <span>Cálculo automatizado activo</span>
+      </div>
+    </div>
+
+    <!-- KPI: Insumos Críticos -->
+    <div class="bg-white rounded-2xl border border-superficie-200 p-6 shadow-sm relative overflow-hidden">
+      <div class="absolute top-0 right-0 p-6 opacity-5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24 text-red-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <p class="text-xs font-semibold uppercase tracking-wider text-texto-400 mb-1">En Riesgo de Agotarse</p>
+      <div class="flex items-baseline gap-2">
+        <span id="kpi-criticos" class="text-3xl font-extrabold text-red-600">—</span>
+        <span class="text-xs text-red-400 font-medium">requieren atención</span>
+      </div>
+      <div class="mt-3 flex items-center gap-1.5 text-xs text-red-600 font-medium">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Stock proyectado ≤ mínimo</span>
+      </div>
+    </div>
+
+    <!-- KPI: Eventos Futuros -->
+    <div class="bg-white rounded-2xl border border-superficie-200 p-6 shadow-sm relative overflow-hidden sm:col-span-2 lg:col-span-1">
+      <div class="absolute top-0 right-0 p-6 opacity-5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24 text-yeti-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <p class="text-xs font-semibold uppercase tracking-wider text-texto-400 mb-1">Eventos Futuros Impactando</p>
+      <div class="flex items-baseline gap-2">
+        <span id="kpi-eventos" class="text-3xl font-extrabold text-yeti-600">—</span>
+        <span class="text-xs text-texto-400 font-medium">pendientes de descontar</span>
+      </div>
+      <div class="mt-3 flex items-center gap-1.5 text-xs text-yeti-600 font-medium">
+        <span class="inline-block w-2 h-2 rounded-full bg-yeti-500"></span>
+        <span>Consumo sumado en proyección</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TABLA PRINCIPAL DE PROYECCIONES ═══════════════ -->
+  <div class="bg-white rounded-2xl border border-superficie-200 shadow-sm overflow-hidden">
+    
+    <!-- Barra de Búsqueda y Filtros -->
+    <div class="px-6 py-4 border-b border-superficie-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-superficie-50/30">
+      <div class="relative flex-1 max-w-md">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-texto-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <input type="text" id="buscar-proyeccion" placeholder="Buscar por insumo o categoría..."
+               class="pl-10 pr-4 py-2 w-full text-sm border border-superficie-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-yeti-500/20 focus:border-yeti-500 placeholder:text-texto-400 transition-all" />
+      </div>
+      <div class="flex items-center gap-2 self-end sm:self-auto">
+        <span class="text-xs text-texto-400 font-medium">Filtrar estado:</span>
+        <select id="filtro-estado" class="text-xs border border-superficie-200 rounded-lg px-2.5 py-1.5 bg-white text-texto-700 focus:outline-none focus:ring-2 focus:ring-yeti-500/20">
+          <option value="todos">Todos los insumos</option>
+          <option value="criticos">En Riesgo / Críticos</option>
+          <option value="optimos">Estado Óptimo</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-superficie-50/50 border-b border-superficie-200">
+            <th class="text-left px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-texto-500">Insumo</th>
+            <th class="text-right px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-texto-500">Stock Actual</th>
+            <th class="text-right px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-texto-500 text-yeti-700">Consumo Proyectado</th>
+            <th class="text-right px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-texto-500">Stock Proyectado</th>
+            <th class="text-center px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-texto-500">Estado Proyección</th>
+            <th class="text-center px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-texto-500">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-proyecciones" class="divide-y divide-superficie-100">
+          <!-- Esqueleto de carga inicial -->
+          <tr id="skeleton-loader">
+            <td colspan="6" class="px-6 py-16 text-center">
+              <div class="flex flex-col items-center justify-center gap-3">
+                <div class="w-8 h-8 border-2 border-yeti-500 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-sm font-medium text-texto-500">Calculando proyecciones logísticas...</p>
+                <p class="text-xs text-texto-400 max-w-md">Analizando las recetas cotizadas en eventos futuros confirmados y con anticipo.</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pie de tabla -->
+    <div class="px-6 py-4 bg-superficie-50/30 border-t border-superficie-200 flex items-center justify-between text-xs text-texto-400">
+      <span id="info-mostrados">Mostrando 0 insumos</span>
+      <span class="hidden sm:inline">⚠️ Las proyecciones asumen el consumo máximo estipulado en las cotizaciones aprobadas.</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MODAL: REABASTECIMIENTO RÁPIDO ═══════════════ -->
+  <div id="modal-reabastecer" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-xs">
+    <div id="modal-box" class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 transform scale-95 opacity-0 transition-all duration-200 overflow-hidden">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-superficie-200 bg-gradient-to-r from-yeti-600 to-yeti-700">
+        <div>
+          <h4 class="text-base font-bold text-white">Reabastecimiento Ágil</h4>
+          <p class="text-[11px] text-yeti-100 font-medium">Entrada de stock logístico</p>
+        </div>
+        <button id="btn-cerrar-modal" class="text-white/80 hover:text-white rounded-lg p-1 hover:bg-white/10 transition-colors cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Formulario -->
+      <form id="form-reabastecer" class="p-6 space-y-4">
+        <input type="hidden" id="input-insumo-id" />
+        
+        <!-- Detalle insumo -->
+        <div class="bg-superficie-50 rounded-xl p-3 border border-superficie-200 flex items-center justify-between">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-texto-400 block">Insumo Seleccionado</span>
+            <span id="lbl-insumo-nombre" class="text-sm font-bold text-texto-900">—</span>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-texto-400 block">Stock Actual</span>
+            <span id="lbl-insumo-stock" class="text-sm font-bold text-yeti-700">—</span>
+          </div>
+        </div>
+
+        <!-- Cantidad a ingresar -->
+        <div>
+          <label for="input-cantidad" class="block text-xs font-bold text-texto-700 uppercase tracking-wider mb-1.5">Cantidad Entrante</label>
+          <div class="relative flex items-center">
+            <input type="number" id="input-cantidad" required step="0.01" min="0.01" placeholder="0.00"
+                   class="w-full px-3 py-2.5 text-sm border border-superficie-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-yeti-500/20 focus:border-yeti-500 font-semibold text-texto-900" />
+            <span id="lbl-insumo-unidad" class="absolute right-3 text-xs font-bold text-texto-400 uppercase bg-white pl-2">—</span>
+          </div>
+          <p class="text-[11px] text-texto-400 mt-1">Se sumará automáticamente al stock actual registrado.</p>
+        </div>
+
+        <!-- Mensaje de Error -->
+        <div id="modal-error" class="hidden rounded-xl bg-red-50 border border-red-100 p-3 text-xs text-red-600 font-medium"></div>
+
+        <!-- Botones -->
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="btn-cancelar-modal" class="px-4 py-2 text-xs font-semibold text-texto-600 hover:bg-superficie-100 rounded-xl transition-colors cursor-pointer">
+            Cancelar
+          </button>
+          <button type="submit" id="btn-submit-reabastecer" class="px-5 py-2 text-xs font-bold text-white bg-yeti-600 hover:bg-yeti-700 rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50">
+            Confirmar Ingreso
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</Layout>
+
+<script>
+  /**
+   * Lógica del Dashboard de Inventario y Logística (Módulo D)
+   */
+
+  const API_BASE = 'http://127.0.0.1:8001/api/v1';
+  let proyeccionesTotales: any[] = [];
+  let insumoReabasteciendo: any = null;
+
+  // ── Elementos DOM ──────────────────────────────────────────────────
+  const tbody = document.getElementById('tbody-proyecciones');
+  const btnRecargar = document.getElementById('btn-recargar');
+  const buscarInput = document.getElementById('buscar-proyeccion') as HTMLInputElement;
+  const filtroEstado = document.getElementById('filtro-estado') as HTMLSelectElement;
+  const infoMostrados = document.getElementById('info-mostrados');
+
+  // KPIs
+  const kpiTotal = document.getElementById('kpi-total');
+  const kpiCriticos = document.getElementById('kpi-criticos');
+  const kpiEventos = document.getElementById('kpi-eventos');
+
+  // Modal
+  const modalBox = document.getElementById('modal-box');
+  const modalReabastecer = document.getElementById('modal-reabastecer');
+  const formReabastecer = document.getElementById('form-reabastecer') as HTMLFormElement;
+  const inputInsumoId = document.getElementById('input-insumo-id') as HTMLInputElement;
+  const inputCantidad = document.getElementById('input-cantidad') as HTMLInputElement;
+  const lblNombre = document.getElementById('lbl-insumo-nombre');
+  const lblStock = document.getElementById('lbl-insumo-stock');
+  const lblUnidad = document.getElementById('lbl-insumo-unidad');
+  const modalError = document.getElementById('modal-error');
+  const btnSubmit = document.getElementById('btn-submit-reabastecer') as HTMLButtonElement;
+
+  // ── Funciones de Utilidad ──────────────────────────────────────────
+  function formato(num: number): string {
+    return Number(num || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function renderBadge(estado: string): string {
+    switch (estado) {
+      case 'agotado':
+        return '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">🚨 Agotado Proyectado</span>';
+      case 'critico':
+        return '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">⚠️ Riesgo / Bajo Mínimo</span>';
+      case 'alerta_actual':
+        return '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200">⚡ Stock Actual Bajo</span>';
+      default:
+        return '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">✅ Óptimo</span>';
+    }
+  }
+
+  // ── Cargar Proyecciones ────────────────────────────────────────────
+  async function cargarDatos() {
+    if (btnRecargar) {
+      btnRecargar.disabled = true;
+      btnRecargar.innerHTML = '<div class="w-3.5 h-3.5 border-2 border-texto-400 border-t-transparent rounded-full animate-spin"></div> Actualizando...';
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/inventario/proyeccion`);
+      const json = await res.json();
+
+      if (json.exito) {
+        proyeccionesTotales = json.datos.proyecciones || [];
+        
+        // Render KPIs
+        if (kpiTotal) kpiTotal.textContent = String(json.datos.kpis.total_insumos || 0);
+        if (kpiCriticos) kpiCriticos.textContent = String(json.datos.kpis.insumos_criticos || 0);
+        if (kpiEventos) kpiEventos.textContent = String(json.datos.kpis.eventos_impactando || 0);
+
+        aplicarFiltros();
+      }
+    } catch {
+      // Error al cargar del backend
+      proyeccionesTotales = [];
+      if (kpiTotal) kpiTotal.textContent = "0";
+      if (kpiCriticos) kpiCriticos.textContent = "0";
+      if (kpiEventos) kpiEventos.textContent = "0";
+
+      aplicarFiltros();
+    } finally {
+      if (btnRecargar) {
+        btnRecargar.disabled = false;
+        btnRecargar.innerHTML = 'Actualizar Datos';
+      }
+    }
+  }
+
+  // ── Filtrar y Renderizar ───────────────────────────────────────────
+  function aplicarFiltros() {
+    if (!tbody) return;
+
+    const query = (buscarInput?.value || '').toLowerCase();
+    const estado = filtroEstado?.value || 'todos';
+
+    const filtrados = proyeccionesTotales.filter(item => {
+      const coincideTexto = item.nombre.toLowerCase().includes(query) || (item.categoria || '').toLowerCase().includes(query);
+      
+      let coincideEstado = true;
+      if (estado === 'criticos') {
+        coincideEstado = ['agotado', 'critico', 'alerta_actual'].includes(item.estado);
+      } else if (estado === 'optimos') {
+        coincideEstado = item.estado === 'optimo';
+      }
+
+      return coincideTexto && coincideEstado;
+    });
+
+    if (filtrados.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="px-6 py-12 text-center text-xs text-texto-400 font-medium">
+            No se encontraron insumos logísticos que coincidan con los filtros aplicados.
+          </td>
+        </tr>`;
+      if (infoMostrados) infoMostrados.textContent = 'Mostrando 0 insumos';
+      return;
+    }
+
+    if (infoMostrados) infoMostrados.textContent = `Mostrando ${filtrados.length} insumo${filtrados.length !== 1 ? 's' : ''}`;
+
+    tbody.innerHTML = filtrados.map(insumo => {
+      const consumo = parseFloat(insumo.consumo_proyectado);
+      const stockProyectado = parseFloat(insumo.stock_proyectado);
+      const colorProyectado = stockProyectado <= 0 ? 'text-red-600 font-extrabold' : (stockProyectado <= parseFloat(insumo.stock_minimo) ? 'text-amber-600 font-bold' : 'text-texto-900 font-semibold');
+
+      return `
+        <tr class="hover:bg-superficie-50/50 transition-colors">
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-mono font-bold bg-superficie-100 px-1.5 py-0.5 rounded text-texto-400">#${insumo.id}</span>
+              <div>
+                <p class="text-xs font-bold text-texto-900">${insumo.nombre}</p>
+                <p class="text-[10px] font-medium text-texto-400 mt-0.5">${insumo.categoria}</p>
+              </div>
+            </div>
+          </td>
+          <td class="px-6 py-4 text-right">
+            <span class="text-xs font-bold text-texto-900">${formato(insumo.stock_actual)}</span>
+            <span class="text-[10px] text-texto-400 ml-0.5">${insumo.unidad_medida}</span>
+          </td>
+          <td class="px-6 py-4 text-right">
+            <span class="text-xs font-bold ${consumo > 0 ? 'text-yeti-700 bg-yeti-50 px-2 py-0.5 rounded-md border border-yeti-100' : 'text-texto-400'}">
+              ${consumo > 0 ? '-' + formato(consumo) : '0.00'}
+            </span>
+          </td>
+          <td class="px-6 py-4 text-right">
+            <span class="text-xs ${colorProyectado}">${formato(stockProyectado)}</span>
+            <span class="text-[10px] text-texto-400 ml-0.5">${insumo.unidad_medida}</span>
+          </td>
+          <td class="px-6 py-4 text-center">
+            ${renderBadge(insumo.estado)}
+          </td>
+          <td class="px-6 py-4 text-center">
+            <button type="button" data-action="reabastecer" data-id="${insumo.id}"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white border border-superficie-200 hover:border-yeti-400 rounded-lg text-[11px] font-bold text-yeti-700 hover:bg-yeti-50 shadow-2xs transition-all cursor-pointer">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Ingreso
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // ── Manejo de Eventos y Modal ──────────────────────────────────────
+  buscarInput?.addEventListener('input', aplicarFiltros);
+  filtroEstado?.addEventListener('change', aplicarFiltros);
+  btnRecargar?.addEventListener('click', cargarDatos);
+
+  // Abrir modal de reabastecimiento
+  tbody?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('button[data-action="reabastecer"]') as HTMLButtonElement | null;
+    if (!btn) return;
+    
+    const id = parseInt(btn.dataset.id || '0', 10);
+    const insumo = proyeccionesTotales.find(i => i.id === id);
+    if (!insumo) return;
+
+    insumoReabasteciendo = insumo;
+    if (inputInsumoId) inputInsumoId.value = String(insumo.id);
+    if (lblNombre) lblNombre.textContent = insumo.nombre;
+    if (lblStock) lblStock.textContent = `${formato(insumo.stock_actual)} ${insumo.unidad_medida}`;
+    if (lblUnidad) lblUnidad.textContent = insumo.unidad_medida;
+    if (inputCantidad) inputCantidad.value = '';
+    if (modalError) modalError.classList.add('hidden');
+
+    if (modalReabastecer) {
+      modalReabastecer.classList.remove('hidden');
+      modalReabastecer.classList.add('flex');
+      setTimeout(() => {
+        modalBox?.classList.remove('scale-95', 'opacity-0');
+        modalBox?.classList.add('scale-100', 'opacity-100');
+        inputCantidad?.focus();
+      }, 10);
+    }
+  });
+
+  // Cerrar Modal
+  function cerrarModal() {
+    modalBox?.classList.remove('scale-100', 'opacity-100');
+    modalBox?.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+      modalReabastecer?.classList.add('hidden');
+      modalReabastecer?.classList.remove('flex');
+      insumoReabasteciendo = null;
+    }, 150);
+  }
+
+  document.getElementById('btn-cerrar-modal')?.addEventListener('click', cerrarModal);
+  document.getElementById('btn-cancelar-modal')?.addEventListener('click', cerrarModal);
+  modalReabastecer?.addEventListener('click', (e) => {
+    if (e.target === modalReabastecer) cerrarModal();
+  });
+
+  // Enviar formulario de reabastecimiento
+  formReabastecer?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!insumoReabasteciendo || !btnSubmit) return;
+
+    const cantidad = parseFloat(inputCantidad?.value || '0');
+    if (isNaN(cantidad) || cantidad <= 0) return;
+
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = 'Procesando...';
+    if (modalError) modalError.classList.add('hidden');
+
+    try {
+      const res = await fetch(`${API_BASE}/inventario/reabastecer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          insumo_id: insumoReabasteciendo.id,
+          cantidad: cantidad,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (res.ok && json.exito) {
+        // Mostrar confirmación SweetAlert2 si está disponible
+        if (typeof (window as any).Swal !== 'undefined') {
+          (window as any).Swal.fire({
+            title: '¡Reabastecimiento Exitoso!',
+            text: json.mensaje,
+            icon: 'success',
+            customClass: {
+              confirmButton: 'bg-yeti-600 text-white font-bold px-6 py-2 rounded-xl'
+            },
+            buttonsStyling: false
+          });
+        }
+        cerrarModal();
+        await cargarDatos(); // Recargar la tabla y KPIs
+      } else {
+        if (modalError) {
+          modalError.textContent = json.mensaje || 'Error al procesar el ingreso de stock.';
+          modalError.classList.remove('hidden');
+        }
+      }
+    } catch {
+      if (modalError) {
+        modalError.textContent = 'Error de red al intentar conectar con el servidor Backend.';
+        modalError.classList.remove('hidden');
+      }
+    } finally {
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = 'Confirmar Ingreso';
+    }
+  });
+
+  // ── Inicializar ────────────────────────────────────────────────────
+  cargarDatos();
+  // Recarga silenciosa cada minuto
+  setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      cargarDatos();
+    }
+  }, 60000);
+</script>

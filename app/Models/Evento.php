@@ -98,6 +98,7 @@ class Evento extends Model
         'notas',
         'cotizacion_id',
         'cliente_id',
+        'inventario_descontado',
     ];
 
     /**
@@ -108,9 +109,10 @@ class Evento extends Model
     protected function casts(): array
     {
         return [
-            'fecha_evento'    => 'date',
-            'total_precio'    => 'decimal:2',
-            'total_invitados' => 'integer',
+            'fecha_evento'          => 'date',
+            'total_precio'          => 'decimal:2',
+            'total_invitados'       => 'integer',
+            'inventario_descontado' => 'boolean',
         ];
     }
 
